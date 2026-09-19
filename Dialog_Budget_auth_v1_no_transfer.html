@@ -1,0 +1,3979 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Диалог Budget</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f4f6f8;
+    color:#1f2937
+}
+header{
+    background:#111827;
+    color:white;
+    padding:20px
+}
+header h1{margin:0}
+.container{
+    max-width:1600px;
+    margin:auto;
+    padding:20px
+}
+.tabs{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    margin-bottom:20px
+}
+.tabs button{
+    border:0;
+    background:white;
+    padding:12px 16px;
+    border-radius:10px;
+    cursor:pointer;
+    white-space:nowrap;
+    font-weight:bold
+}
+.tabs button.active{
+    background:#111827;
+    color:white
+}
+.page{display:none}
+.page.active{display:block}
+.section{
+    background:white;
+    padding:20px;
+    border-radius:16px;
+    margin-bottom:20px;
+    box-shadow:0 3px 15px rgba(0,0,0,.05)
+}
+.section h2{margin-top:0}
+.form{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px
+}
+label{
+    display:block;
+    font-size:13px;
+    color:#6b7280;
+    margin-bottom:5px
+}
+input,select{
+    width:100%;
+    padding:11px;
+    border:1px solid #d1d5db;
+    border-radius:9px;
+    font-size:14px;
+    background:white
+}
+button{cursor:pointer}
+.primary{
+    border:0;
+    background:#111827;
+    color:white;
+    padding:11px 18px;
+    border-radius:9px;
+    font-weight:bold
+}
+.secondary{
+    border:0;
+    background:#e5e7eb;
+    padding:9px 13px;
+    border-radius:8px
+}
+.danger{
+    border:0;
+    background:#dc2626;
+    color:white;
+    padding:8px 11px;
+    border-radius:8px
+}
+.success{
+    border:0;
+    background:#16a34a;
+    color:white;
+    padding:8px 11px;
+    border-radius:8px
+}
+.form>button{
+    grid-column:1/-1
+}
+.cards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px
+}
+.card{
+    background:white;
+    padding:18px;
+    border-radius:15px;
+    box-shadow:0 3px 15px rgba(0,0,0,.05)
+}
+.card small{color:#6b7280}
+.card strong{
+    display:block;
+    margin-top:8px;
+    font-size:22px
+}
+.table-wrap{overflow:auto}
+table{
+    width:100%;
+    border-collapse:collapse
+}
+th,td{
+    padding:11px;
+    border-bottom:1px solid #eee;
+    text-align:left;
+    white-space:nowrap
+}
+th{
+    color:#6b7280;
+    font-size:13px
+}
+.actions{
+    display:flex;
+    gap:5px;
+    flex-wrap:wrap
+}
+.subject-row{
+    display:grid;
+    grid-template-columns:1.2fr 1.2fr 1fr 1fr auto;
+    gap:10px;
+    align-items:end;
+    background:#f9fafb;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:10px
+}
+.paid{
+    color:#15803d;
+    font-weight:bold
+}
+.debt{
+    color:#dc2626;
+    font-weight:bold
+}
+.green{
+    background:#dcfce7;
+    color:#166534;
+    padding:5px 8px;
+    border-radius:7px
+}
+.red{
+    background:#fee2e2;
+    color:#991b1b;
+    padding:5px 8px;
+    border-radius:7px
+}
+.period{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:12px;
+    align-items:end
+}
+.charts{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px
+}
+.chartbox{
+    height:360px
+}
+.info{
+    background:#f9fafb;
+    padding:12px;
+    border-radius:10px;
+    margin-top:10px
+}
+.teacher-name-btn{
+    border:0;
+    background:none;
+    padding:0;
+    font:inherit;
+    font-weight:bold;
+    color:#111827;
+    cursor:pointer;
+    text-align:left
+}
+.teacher-name-btn:hover{text-decoration:underline}
+.teacher-students{
+    display:none;
+    background:#f9fafb;
+    border-radius:12px;
+}
+.teacher-students.open{display:table-row}
+.teacher-students-cell{
+    padding:0 !important;
+    border-bottom:0 !important;
+}
+.teacher-group{
+    margin:14px 0;
+    padding:14px;
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+}
+.teacher-group:first-child{margin-top:10px}
+.teacher-group:last-child{margin-bottom:10px}
+.teacher-group h4{
+    margin:0 0 10px;
+    font-size:15px;
+}
+.teacher-student-table{
+    width:100%;
+    border-collapse:collapse;
+}
+.teacher-student-table th,
+.teacher-student-table td{
+    padding:9px;
+    border-bottom:1px solid #eee;
+    text-align:left;
+}
+.teacher-student-table th{
+    color:#6b7280;
+    font-size:12px;
+}
+.teacher-student-table tr:last-child td{border-bottom:0}
+.teacher-status-active{
+    color:#15803d;
+    font-weight:bold;
+}
+.teacher-status-inactive{
+    color:#dc2626;
+    font-weight:bold;
+}
+.teacher-empty{
+    padding:14px;
+    color:#6b7280;
+}
+.sync-status{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    margin-top:10px;
+    padding:7px 11px;
+    border-radius:999px;
+    background:rgba(255,255,255,.15);
+    color:#fff;
+    font-size:12px;
+}
+.sync-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#fbbf24;
+    box-shadow:0 0 0 3px rgba(251,191,36,.18);
+}
+@media(max-width:900px){
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .charts{grid-template-columns:1fr}
+    .subject-row{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+    .container{padding:10px}
+    .form{grid-template-columns:1fr}
+    .period{grid-template-columns:1fr}
+    .cards{grid-template-columns:1fr 1fr}
+}
+
+.auth-gate{
+    position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+    padding:20px; background:linear-gradient(135deg,#111827,#1f2937 55%,#374151); overflow:auto;
+}
+.auth-card{
+    width:min(460px,100%); background:#fff; border-radius:22px; padding:28px;
+    box-shadow:0 20px 60px rgba(0,0,0,.28);
+}
+.auth-card h2{margin:0 0 6px}
+.auth-subtitle{color:#6b7280; margin:0 0 22px}
+.auth-brand{font-size:34px;font-weight:800;margin-bottom:18px}
+.auth-form{display:grid;gap:13px}
+.auth-form .primary{width:100%;margin-top:4px}
+.auth-switch{display:flex;gap:8px;margin-bottom:18px}
+.auth-switch button{flex:1;border:0;background:#f3f4f6;padding:10px;border-radius:10px;font-weight:700}
+.auth-switch button.active{background:#111827;color:#fff}
+.auth-message{display:none;padding:11px 12px;border-radius:10px;margin-bottom:14px;font-size:13px}
+.auth-message.error{display:block;background:#fee2e2;color:#991b1b}
+.auth-message.success{display:block;background:#dcfce7;color:#166534}
+.auth-note{font-size:12px;color:#6b7280;line-height:1.5;margin-top:14px}
+.user-bar{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
+.user-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.12);font-size:12px}
+.logout-btn{border:0;background:#fff;color:#111827;padding:7px 11px;border-radius:8px;font-weight:700}
+.pending-card{width:min(520px,100%);text-align:center}
+.pending-icon{font-size:52px;margin-bottom:8px}
+.admin-status{display:inline-block;padding:5px 8px;border-radius:7px;font-weight:700;font-size:12px}
+.admin-status.pending{background:#fef3c7;color:#92400e}
+.admin-status.approved{background:#dcfce7;color:#166534}
+.admin-status.blocked{background:#fee2e2;color:#991b1b}
+@media(max-width:600px){.auth-card{padding:20px}.user-bar{justify-content:flex-start}}
+
+</style>
+</head>
+<body>
+<div class="auth-gate" id="authGate">
+<div class="auth-card" id="loginCard">
+<div class="auth-brand">Диалог 📊</div>
+<p class="auth-subtitle">Общая система учебного центра</p>
+<div class="auth-switch">
+<button class="active" id="loginTab" onclick="switchAuthMode('login')">Войти</button>
+<button id="registerTab" onclick="switchAuthMode('register')">Регистрация менеджера</button>
+</div>
+<div class="auth-message" id="authMessage"></div>
+<form class="auth-form" id="loginForm" onsubmit="event.preventDefault();loginUser();">
+<div>
+<label>Логин</label>
+<input autocomplete="username" id="loginUsername" pattern="[A-Za-z0-9._-]+" placeholder="например: manager1" required="" type="text"/>
+</div>
+<div>
+<label>Пароль</label>
+<input autocomplete="current-password" id="loginPassword" placeholder="••••••••" required="" type="password"/>
+</div>
+<button class="primary" type="submit">🔐 Войти</button>
+</form>
+<form class="auth-form" id="registerForm" onsubmit="event.preventDefault();registerManager();" style="display:none">
+<div>
+<label>Имя менеджера</label>
+<input id="registerName" placeholder="Например: Азиз Иванов" required=""/>
+</div>
+<div>
+<label>Логин</label>
+<input autocomplete="username" id="registerUsername" pattern="[A-Za-z0-9._-]+" placeholder="например: manager1" required="" type="text"/>
+</div>
+<div>
+<label>Пароль</label>
+<input autocomplete="new-password" id="registerPassword" minlength="6" placeholder="Минимум 6 символов" required="" type="password"/>
+</div>
+<div>
+<label>Повторите пароль</label>
+<input autocomplete="new-password" id="registerPassword2" minlength="6" placeholder="Повторите пароль" required="" type="password"/>
+</div>
+<button class="primary" type="submit">📝 Зарегистрировать менеджера</button>
+</form>
+<div class="auth-note">После регистрации менеджер получает статус «Ожидает разрешения». После подтверждения администратора он сможет войти по логину и паролю.</div>
+</div>
+<div class="auth-card pending-card" id="pendingCard" style="display:none">
+<div class="pending-icon">⏳</div>
+<h2>Доступ ожидает разрешения</h2>
+<p class="auth-subtitle">Ваш аккаунт менеджера зарегистрирован. Администратор должен подтвердить доступ.</p>
+<button class="secondary" onclick="logoutUser()">Выйти</button>
+</div>
+</div>
+<div id="appRoot" style="display:none">
+<header>
+<h1>Диалог 📊</h1>
+<p>Управление учебным центром</p>
+<div class="user-bar">
+<div class="sync-status" id="syncStatus"><span class="sync-dot" id="syncDot"></span><span id="syncText">Синхронизация...</span></div>
+<div class="user-badge" id="userBadge">👤 Не авторизован</div>
+<button class="logout-btn" onclick="logoutUser()">Выйти</button>
+</div>
+</header>
+<div class="container">
+<div class="tabs">
+<button class="active" onclick="showPage('dashboard',this)">📊 Главная</button>
+<button onclick="showPage('students',this)">👨‍🎓 Ученики</button>
+<button onclick="showPage('teachers',this)">👩‍🏫 Учителя</button>
+<button onclick="showPage('staff',this)">👥 Персонал</button>
+<button onclick="showPage('salary',this)">💵 Зарплаты</button>
+
+<button onclick="showPage('leavers',this)">🚪 Уходы</button>
+<button onclick="showPage('finance',this)">💰 Финансы</button>
+<button id="usersTab" onclick="showPage('users',this)" style="display:none">👤 Доступы</button>
+<button id="journalTab" onclick="showPage('journal',this)" style="display:none">📋 Журнал</button>
+</div>
+<!-- ================= DASHBOARD ================= -->
+<section class="page active" id="dashboard">
+<div class="section">
+<h2>📊 Общий отчёт</h2>
+<div class="period">
+<div>
+<label>С</label>
+<input id="reportFrom" type="date"/>
+</div>
+<div>
+<label>По</label>
+<input id="reportTo" type="date"/>
+</div>
+<button class="primary" onclick="makeReport()">
+Показать отчёт
+</button>
+</div>
+</div>
+<div class="cards">
+<div class="card">
+<small>💰 Общий доход</small>
+<strong id="totalIncome">0 сум</strong>
+</div>
+<div class="card">
+<small>💸 Общие расходы</small>
+<strong id="totalExpense">0 сум</strong>
+</div>
+<div class="card">
+<small>📈 Прибыль</small>
+<strong id="totalProfit">0 сум</strong>
+</div>
+<div class="card">
+<small>👨‍🎓 Активные ученики</small>
+<strong id="activeStudents">0</strong>
+</div>
+<div class="card">
+<small>🔴 Долги учеников</small>
+<strong id="studentDebt">0 сум</strong>
+</div>
+<div class="card">
+<small>💵 Долг по зарплате</small>
+<strong id="salaryDebt">0 сум</strong>
+</div>
+<div class="card">
+<small>🚪 Ушли за период</small>
+<strong id="leaversCount">0</strong>
+</div>
+</div>
+<div class="section">
+<h2>📚 Обучение</h2>
+<div class="cards">
+<div class="card">
+<small>Доход</small>
+<strong id="eduIncome">0 сум</strong>
+</div>
+<div class="card">
+<small>Расход</small>
+<strong id="eduExpense">0 сум</strong>
+</div>
+<div class="card">
+<small>Зарплаты</small>
+<strong id="eduSalary">0 сум</strong>
+</div>
+<div class="card">
+<small>Прибыль</small>
+<strong id="eduProfit">0 сум</strong>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h2>📅 Месячный отчёт</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Месяц</th>
+<th>Доход</th>
+<th>Расход</th>
+<th>Прибыль</th>
+<th>Новые</th>
+<th>Ушли</th>
+<th>Активные</th>
+</tr>
+</thead>
+<tbody id="monthlyReport"></tbody>
+</table>
+</div>
+</div>
+<div class="charts">
+<div class="section chartbox">
+<h3>💰 Доход / Расход / Прибыль</h3>
+<canvas id="financeChart"></canvas>
+</div>
+<div class="section chartbox">
+<h3>👨‍🎓 Ученики</h3>
+<canvas id="studentsChart"></canvas>
+</div>
+</div>
+</section>
+<!-- ================= STUDENTS ================= -->
+<section class="page" id="students">
+<div class="section">
+<h2 id="studentFormTitle">➕ Добавить ученика</h2>
+<input id="studentId" type="hidden"/>
+<div class="form">
+<div>
+<label>Имя и фамилия</label>
+<input id="studentName"/>
+</div>
+<div>
+<label>Номер телефона</label>
+<input id="studentPhone" placeholder="+998 90 123 45 67" type="tel"/>
+</div>
+<div>
+<label>Группа</label>
+<input id="studentGroup"/>
+</div>
+<div>
+<label>Дата начала</label>
+<input id="studentStart" type="date"/>
+</div>
+<div>
+<label>Статус</label>
+<select id="studentStatus">
+<option value="active">🟢 Активный</option>
+<option value="inactive">🔴 Неактивный</option>
+</select>
+</div>
+</div>
+<h3>📚 Предметы</h3>
+<div id="subjects"></div>
+<button class="secondary" onclick="addSubjectRow()">
+＋ Добавить предмет
+</button>
+<br/><br/>
+<button class="primary" onclick="saveStudent()">
+💾 Сохранить ученика
+</button>
+<button class="secondary" onclick="resetStudentForm()">
+Отмена
+</button>
+</div>
+<div class="section">
+<h2>👨‍🎓 Список учеников</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Ученик</th>
+<th>Телефон</th>
+<th>Группа</th>
+<th>Предметы</th>
+<th>Оплачено</th>
+<th>Долг</th>
+<th>Статус</th>
+
+<th>Действия</th>
+</tr>
+</thead>
+<tbody id="studentsTable"></tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- ================= TEACHERS ================= -->
+<section class="page" id="teachers">
+<div class="section">
+<h2>👩‍🏫 Преподаватели</h2>
+<input id="teacherId" type="hidden"/>
+<div class="form">
+<div>
+<label>Имя</label>
+<input id="teacherName"/>
+</div>
+<div>
+<label>Предмет</label>
+<input id="teacherSubject"/>
+</div>
+<div>
+<label>Статус</label>
+<select id="teacherStatus">
+<option value="active">🟢 Активный</option>
+<option value="inactive">🔴 Неактивный</option>
+</select>
+</div>
+<button class="primary" onclick="saveTeacher()">
+💾 Сохранить
+</button>
+</div>
+</div>
+<div class="section">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Преподаватель</th>
+<th>Предмет</th>
+<th>Ученики</th>
+<th>Статус</th>
+<th>Действия</th>
+</tr>
+</thead>
+<tbody id="teachersTable"></tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- ================= STAFF ================= -->
+<section class="page" id="staff">
+<div class="section">
+<h2>👥 Другой персонал</h2>
+<input id="staffId" type="hidden"/>
+<div class="form">
+<div>
+<label>Имя</label>
+<input id="staffName"/>
+</div>
+<div>
+<label>Должность</label>
+<input id="staffPosition"/>
+</div>
+<div>
+<label>Статус</label>
+<select id="staffStatus">
+<option value="active">🟢 Активный</option>
+<option value="inactive">🔴 Неактивный</option>
+</select>
+</div>
+<button class="primary" onclick="saveStaff()">
+💾 Сохранить
+</button>
+</div>
+</div>
+<div class="section">
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Имя</th>
+<th>Должность</th>
+<th>Статус</th>
+<th>Действия</th>
+</tr>
+</thead>
+<tbody id="staffTable"></tbody>
+</table>
+</div>
+</section>
+<!-- ================= SALARY ================= -->
+<section class="page" id="salary">
+<div class="section">
+<h2>💵 Зарплата</h2>
+<div class="form">
+<div>
+<label>Сотрудник</label>
+<select id="salaryEmployee"></select>
+</div>
+<div>
+<label>Месяц</label>
+<input id="salaryMonth" type="month"/>
+</div>
+<div>
+<label>Начислено</label>
+<input id="salaryAccrued" type="number"/>
+</div>
+<div>
+<label>Выплата</label>
+<input id="salaryPayment" type="number"/>
+</div>
+<div>
+<label>Дата выплаты</label>
+<input id="salaryDate" type="date"/>
+</div>
+<div>
+<label>Комментарий</label>
+<input id="salaryComment"/>
+</div>
+<button class="primary" onclick="saveSalary()">
+💾 Добавить выплату
+</button>
+</div>
+</div>
+<div class="section">
+<h2>🏆 Кто ещё должен получить</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Сотрудник</th>
+<th>Месяц</th>
+<th>Начислено</th>
+<th>Выплачено</th>
+<th>Осталось</th>
+<th>Последняя выплата</th>
+<th>Удалить</th>
+</tr>
+</thead>
+<tbody id="salaryTable"></tbody>
+</table>
+</div>
+</div>
+<div class="section">
+<h2>📜 История выплат</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Сотрудник</th>
+<th>Месяц</th>
+<th>Сумма</th>
+<th>Дата</th>
+<th>Комментарий</th>
+<th>Удалить</th>
+</tr>
+</thead>
+<tbody id="salaryHistory"></tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- ================= TRANSFER ================= -->
+
+<!-- ================= LEAVERS ================= -->
+<section class="page" id="leavers">
+<div class="section">
+<h2>🚪 Уход ученика</h2>
+<div class="form">
+<div>
+<label>Ученик</label>
+<select id="leaverStudent"></select>
+</div>
+<div>
+<label>Преподаватель</label>
+<select id="leaverTeacher"></select>
+</div>
+<div>
+<label>Дата ухода</label>
+<input id="leaverDate" type="date"/>
+</div>
+<div>
+<label>Причина</label>
+<select id="leaverReason">
+<option>Переезд</option>
+<option>Дорого</option>
+<option>Расписание</option>
+<option>Не понравился преподаватель</option>
+<option>Не понравилось обучение</option>
+<option>Потерял интерес</option>
+<option>Семейные обстоятельства</option>
+<option>Перешёл в другой центр</option>
+<option>Другое</option>
+</select>
+</div>
+<div>
+<label>Комментарий</label>
+<input id="leaverComment"/>
+</div>
+<button class="primary" onclick="saveLeaver()">
+💾 Сохранить
+</button>
+</div>
+</div>
+<div class="section">
+<h2>История уходов</h2>
+<table>
+<thead>
+<tr>
+<th>Ученик</th>
+<th>Преподаватель</th>
+<th>Дата</th>
+<th>Причина</th>
+<th>Комментарий</th>
+<th>Удалить</th>
+</tr>
+</thead>
+<tbody id="leaversTable"></tbody>
+</table>
+</div>
+</section>
+<!-- ================= FINANCE ================= -->
+<section class="page" id="finance">
+<div class="section">
+<h2>📚 Добавить оплату обучения</h2>
+<div class="form">
+<div>
+<label>Дата оплаты</label>
+<input id="incomeDate" type="date"/>
+</div>
+<div>
+<label>👨‍🎓 Кто оплатил?</label>
+<select id="incomeStudent" onchange="loadStudentSubjectsForPayment()">
+<option value="">Выберите ученика</option>
+</select>
+</div>
+<div>
+<label>📚 За какой предмет?</label>
+<select id="incomeSubject" onchange="showPaymentInfo()">
+<option value="">Сначала выберите ученика</option>
+</select>
+</div>
+<div>
+<label>📅 Месяц обучения</label>
+<input id="incomeMonth" type="month"/>
+</div>
+<div>
+<label>💳 Сумма оплаты</label>
+<input id="incomeAmount" oninput="showPaymentInfo()" placeholder="Например 200000" type="number"/>
+</div>
+<div>
+<label>Комментарий</label>
+<input id="incomeComment" placeholder="Например: первая часть"/>
+</div>
+<button class="primary" onclick="addIncome()">＋ Сохранить оплату</button>
+</div>
+<div class="info" id="paymentInfo">Выберите ученика и предмет.</div>
+</div>
+<div class="section">
+<h2>💸 Добавить расход</h2>
+<div class="form">
+<div>
+<label>Дата</label>
+<input id="expenseDate" type="date"/>
+</div>
+<div>
+<label>Категория</label>
+<select id="expenseCategory">
+<option value="Учебный центр">Учебный центр</option>
+<option value="Реклама">Реклама</option>
+<option value="Аренда">Аренда</option>
+<option value="Кредиты">Кредиты</option>
+<option value="Коммунальные">Коммунальные</option>
+<option value="Оборудование">Оборудование</option>
+<option value="Прочее">Прочее</option>
+</select>
+</div>
+<div>
+<label>Сумма</label>
+<input id="expenseAmount" type="number"/>
+</div>
+<div>
+<label>Комментарий</label>
+<input id="expenseComment"/>
+</div>
+<button class="primary" onclick="addExpense()">＋ Добавить расход</button>
+</div>
+</div>
+<div class="section">
+<h2>📜 Финансы</h2>
+<div class="form" style="margin-bottom:20px">
+<div>
+<label>С даты</label>
+<input id="financeFrom" onchange="renderFinance()" type="date"/>
+</div>
+<div>
+<label>По дату</label>
+<input id="financeTo" onchange="renderFinance()" type="date"/>
+</div>
+<div>
+<label>Тип операции</label>
+<select id="financeOperationType" onchange="syncFinanceTypeFilters()">
+<option value="all">Все операции</option>
+<option value="income">Доход</option>
+<option value="expense">Расход</option>
+</select>
+</div>
+<div id="financeIncomeTypeWrap">
+<label>Вид дохода</label>
+<select id="financeIncomeType" onchange="renderFinance()">
+<option value="all">Все доходы</option>
+<option value="education">Обучение</option>
+</select>
+</div>
+<div id="financeExpenseTypeWrap" style="display:none">
+<label>Вид расхода</label>
+<select id="financeExpenseType" onchange="renderFinance()">
+<option value="all">Все расходы</option>
+<option value="salary">Зарплата</option>
+<option value="Аренда">Аренда</option>
+<option value="Кредиты">Кредиты</option>
+<option value="Коммунальные">Коммунальные</option>
+<option value="Учебный центр">Учебный центр</option>
+<option value="Реклама">Реклама</option>
+<option value="Оборудование">Оборудование</option>
+<option value="Прочее">Прочее</option>
+</select>
+</div>
+<button class="secondary" onclick="resetFinanceFilters()">↺ Сбросить</button>
+</div>
+<div class="section" id="financeIncomeBlock" style="margin-top:15px">
+<h3>📈 Доходы</h3>
+<div class="info" id="financeIncomeSummary"></div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Дата</th><th>Ученик</th><th>Предмет</th><th>Месяц</th><th>Тип дохода</th><th>Сумма</th><th>Комментарий</th><th>Действия</th>
+</tr></thead>
+<tbody id="financeIncomeTable"></tbody>
+</table>
+</div>
+</div>
+<div class="section" id="financeExpenseBlock" style="margin-top:15px">
+<h3>📉 Расходы</h3>
+<div class="info" id="financeExpenseSummary"></div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Дата</th><th>Сотрудник / категория</th><th>Тип расхода</th><th>Месяц</th><th>Сумма</th><th>Комментарий</th><th>Действия</th>
+</tr></thead>
+<tbody id="financeExpenseTable"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="section">
+<h2>👩‍🏫 Анализ группы учителя</h2>
+<div class="form" style="margin-bottom:20px">
+<div>
+<label>Учитель</label>
+<select id="financeTeacher" onchange="loadFinanceTeacherGroups()">
+<option value="">Выберите учителя</option>
+</select>
+</div>
+<div>
+<label>Группа</label>
+<select id="financeTeacherGroup" onchange="renderFinanceTeacherGroup()">
+<option value="">Сначала выберите учителя</option>
+</select>
+</div>
+<div>
+<label>Месяц</label>
+<input id="financeTeacherMonth" onchange="renderFinanceTeacherGroup()" type="month"/>
+</div>
+</div>
+<div class="info" id="financeTeacherSummary">Выберите учителя, группу и месяц.</div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>№</th><th>Ученик</th><th>Предмет</th><th>Тариф</th><th>Оплатил</th><th>Долг</th><th>Статус</th>
+</tr></thead>
+<tbody id="financeTeacherStudentsTable"></tbody>
+</table>
+</div>
+</div>
+</section>
+<section class="page" id="users">
+<div class="section">
+<h2>👤 Управление доступом</h2>
+<div class="info">Только администратор может разрешать и блокировать менеджеров. Администратор в системе только один.</div>
+</div>
+<div class="section">
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>№</th><th>Имя</th><th>Логин</th><th>Роль</th><th>Статус</th><th>Дата регистрации</th><th>Действия</th></tr>
+</thead>
+<tbody id="usersTable"></tbody>
+</table>
+</div>
+</div>
+</section>
+<section class="page" id="journal">
+<div class="section">
+<h2>📋 Журнал действий</h2>
+<div class="info">Здесь фиксируется, кто из администраторов и менеджеров добавлял, изменял или удалял данные в системе. Журнал доступен только администратору.</div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<button class="primary" onclick="loadAuditLog()">🔄 Обновить журнал</button>
+<button class="danger" id="clearJournalBtn" onclick="clearJournal()" style="display:none" type="button">🗑️ Очистить журнал</button>
+<span id="journalStatus" style="color:#6b7280;font-size:13px"></span>
+</div>
+</div>
+<div class="section">
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>№</th><th>Дата и время</th><th>Пользователь</th><th>Роль</th><th>Действие</th><th>Раздел</th><th>Объект</th><th>Детали</th></tr>
+</thead>
+<tbody id="journalTable"></tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
+<script>
+
+/* ======================================================
+DATABASE
+====================================================== */
+
+const KEY="DIALOG_BUDGET_FINAL_V5";
+
+/* ======================================================
+SUPABASE — ОБЩАЯ БАЗА ДЛЯ ВСЕХ УСТРОЙСТВ
+====================================================== */
+const SUPABASE_URL="https://xdzslvibvolrfljfmsyd.supabase.co";
+const SUPABASE_KEY="sb_publishable_hxhDhSs8NgoAvF9ohcoEug_1tLXcfvl";
+const SUPABASE_TABLE="dialog_budget_data";
+const SUPABASE_ROW_ID=1;
+const SYNC_POLL_MS=5000;
+
+// Supabase Auth: роли только admin / manager.
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let authSession=null;
+let currentUser=null;
+let currentProfile=null;
+let authReady=false;
+let accessPollTimer=null;
+
+// Supabase Auth технически использует email как идентификатор.
+// Пользователь его не вводит: из логина создаётся внутренний технический адрес.
+const AUTH_DOMAIN='dialog.local';
+function normalizeUsername(value){
+    return String(value||'').trim().toLowerCase();
+}
+function validUsername(value){
+    return /^[a-z0-9][a-z0-9._-]{2,31}$/.test(value);
+}
+function authEmailFromUsername(username){
+    return `${normalizeUsername(username)}@${AUTH_DOMAIN}`;
+}
+
+const DB_ARRAY_KEYS=[
+    "students",
+    "teachers",
+    "staff",
+    "salaries",
+    "salaryPayments",
+    "leavers",
+    "incomes",
+    "expenses"
+];
+
+function emptyDB(){
+    return{
+        students:[],
+        teachers:[],
+        staff:[],
+        salaries:[],
+        salaryPayments:[],
+        leavers:[],
+        incomes:[],
+        expenses:[]
+    };
+}
+
+function cloneData(value){
+    return JSON.parse(JSON.stringify(value));
+}
+
+function normalizeDB(data){
+    const base=emptyDB();
+    const result={...base,...(data||{})};
+    DB_ARRAY_KEYS.forEach(key=>{
+        if(!Array.isArray(result[key]))result[key]=[];
+    });
+    return result;
+}
+
+let DB=normalizeDB(JSON.parse(localStorage.getItem(KEY)||"null")||emptyDB());
+let LAST_SYNC_DB=cloneData(DB);
+let cloudSaveTimer=null;
+let cloudSaveInProgress=false;
+let cloudSaveQueued=false;
+let cloudPollTimer=null;
+let realtimeChannel=null;
+let lastCloudUpdatedAt=null;
+
+function saveLocal(){
+    localStorage.setItem(KEY,JSON.stringify(DB));
+}
+
+function setSyncStatus(type,text){
+    const dot=$("syncDot");
+    const label=$("syncText");
+    if(label)label.textContent=text;
+    if(dot){
+        const colors={
+            ok:"#22c55e",
+            sync:"#fbbf24",
+            error:"#ef4444"
+        };
+        const c=colors[type]||colors.sync;
+        dot.style.background=c;
+        dot.style.boxShadow=`0 0 0 3px ${c}2e`;
+    }
+}
+
+async function supabaseHeaders(extra={}){
+    const {data}=await sb.auth.getSession();
+    const token=data?.session?.access_token||authSession?.access_token;
+    if(!token)throw new Error("Нет активной сессии Supabase");
+    return{
+        "apikey":SUPABASE_KEY,
+        "Authorization":"Bearer "+token,
+        "Content-Type":"application/json",
+        ...extra
+    };
+}
+
+function recordId(record){
+    return String(record?.id ?? "");
+}
+
+function snapshotDiff(base,current){
+    const diff={};
+
+    DB_ARRAY_KEYS.forEach(key=>{
+        const before=Array.isArray(base?.[key])?base[key]:[];
+        const now=Array.isArray(current?.[key])?current[key]:[];
+
+        const beforeMap=new Map(before.map(x=>[recordId(x),JSON.stringify(x)]));
+        const nowMap=new Map(now.map(x=>[recordId(x),x]));
+
+        const changed=[];
+        now.forEach(item=>{
+            const id=recordId(item);
+            if(!id || beforeMap.get(id)!==JSON.stringify(item))changed.push(cloneData(item));
+        });
+
+        const deleted=[];
+        before.forEach(item=>{
+            const id=recordId(item);
+            if(id && !nowMap.has(id))deleted.push(id);
+        });
+
+        diff[key]={changed,deleted};
+    });
+
+    return diff;
+}
+
+function applyLocalChangesToCloud(cloud,changes){
+    const result=normalizeDB(cloud);
+
+    DB_ARRAY_KEYS.forEach(key=>{
+        const change=changes[key]||{changed:[],deleted:[]};
+        const map=new Map(result[key].map(item=>[recordId(item),item]));
+
+        (change.deleted||[]).forEach(id=>map.delete(String(id)));
+        (change.changed||[]).forEach(item=>{
+            const id=recordId(item);
+            if(id)map.set(id,cloneData(item));
+        });
+
+        result[key]=Array.from(map.values());
+    });
+
+    return result;
+}
+
+/*
+Первичная миграция: объединяем локальные данные устройства
+с облачными данными. Для одинакового ID приоритет у облака,
+а уникальные записи с устройства тоже отправляются в облако.
+*/
+function mergeLocalAndCloud(local,cloud){
+    const a=normalizeDB(local);
+    const b=normalizeDB(cloud);
+    const result=normalizeDB(b);
+
+    DB_ARRAY_KEYS.forEach(key=>{
+        const map=new Map(result[key].map(item=>[recordId(item),cloneData(item)]));
+        a[key].forEach(item=>{
+            const id=recordId(item);
+            if(id && !map.has(id))map.set(id,cloneData(item));
+        });
+        result[key]=Array.from(map.values());
+    });
+
+    return result;
+}
+
+
+function setAuthMessage(message,type="error"){
+    const box=$("authMessage");
+    if(!box)return;
+    if(!message){
+        box.className="auth-message";
+        box.textContent="";
+        return;
+    }
+    box.className="auth-message "+type;
+    box.textContent=message;
+}
+
+function switchAuthMode(mode){
+    const login=mode==="login";
+    $("loginForm").style.display=login?"grid":"none";
+    $("registerForm").style.display=login?"none":"grid";
+    $("loginTab").classList.toggle("active",login);
+    $("registerTab").classList.toggle("active",!login);
+    setAuthMessage("");
+}
+
+function showAuthLogin(){
+    $("authGate").style.display="flex";
+    $("loginCard").style.display="block";
+    $("pendingCard").style.display="none";
+    switchAuthMode("login");
+}
+
+function showPendingAccess(){
+    $("authGate").style.display="flex";
+    $("loginCard").style.display="none";
+    $("pendingCard").style.display="block";
+}
+
+function showAppShell(){
+    $("authGate").style.display="none";
+    $("appRoot").style.display="block";
+}
+
+function hideAppShell(){
+    $("appRoot").style.display="none";
+}
+
+function escapeHtml(value){
+    return String(value??"")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+}
+
+function isAdmin(){
+    return currentProfile?.role==="admin";
+}
+
+function isApprovedManager(){
+    return currentProfile?.role==="manager" && currentProfile?.approved===true;
+}
+
+function hasAppAccess(){
+    return isAdmin() || isApprovedManager();
+}
+
+async function loadCurrentProfile(userId){
+    const {data,error}=await sb
+        .from("dialog_profiles")
+        .select("id,username,full_name,role,approved,created_at")
+        .eq("id",userId)
+        .maybeSingle();
+
+    if(error)throw error;
+    return data;
+}
+
+function updateUserBadge(){
+    const badge=$("userBadge");
+    if(!badge)return;
+    if(!currentUser||!currentProfile){
+        badge.textContent="👤 Не авторизован";
+        return;
+    }
+    const role=currentProfile.role==="admin"?"Администратор":"Менеджер";
+    badge.textContent=`👤 ${currentProfile.full_name||currentProfile.username||"Пользователь"} · ${role}`;
+}
+
+function applyRoleUI(){
+    const usersTab=$("usersTab");
+    const journalTab=$("journalTab");
+    if(usersTab)usersTab.style.display=isAdmin()?"block":"none";
+    if(journalTab)journalTab.style.display=isAdmin()?"block":"none";
+    const clearJournalBtn=$("clearJournalBtn");
+    if(clearJournalBtn)clearJournalBtn.style.display=isAdmin()?"inline-flex":"none";
+    updateUserBadge();
+}
+
+async function loginUser(){
+    const username=normalizeUsername($("loginUsername").value);
+    const password=$("loginPassword").value;
+    if(!username||!password){
+        setAuthMessage("Введите логин и пароль.");
+        return;
+    }
+    if(!validUsername(username)){
+        setAuthMessage("Логин: 3–32 символа, только латинские буквы, цифры, точка, тире или _. ");
+        return;
+    }
+
+    setAuthMessage("Выполняется вход...","success");
+    const email=authEmailFromUsername(username);
+    const {error}=await sb.auth.signInWithPassword({email,password});
+    if(error){
+        console.error("Диалог login error:", error);
+        const msg=String(error.message||"Неизвестная ошибка");
+        if(/email not confirmed/i.test(msg)){
+            setAuthMessage("Email аккаунта не подтверждён в Supabase. Открой Authentication → Users → mira и подтверди пользователя.");
+        }else if(/invalid login credentials/i.test(msg)){
+            setAuthMessage("Supabase не принял логин/пароль. Проверь, что аккаунт mira создан с email " + email + " и введён правильный пароль.");
+        }else{
+            setAuthMessage("Ошибка входа Supabase: " + msg);
+        }
+        return;
+    }
+    setAuthMessage("Вход выполнен.","success");
+}
+
+async function registerManager(){
+    const name=$("registerName").value.trim();
+    const username=normalizeUsername($("registerUsername").value);
+    const password=$("registerPassword").value;
+    const password2=$("registerPassword2").value;
+
+    if(!name||!username||!password){
+        setAuthMessage("Заполните все поля.");
+        return;
+    }
+    if(!validUsername(username)){
+        setAuthMessage("Логин: 3–32 символа, только латинские буквы, цифры, точка, тире или _. ");
+        return;
+    }
+    if(password!==password2){
+        setAuthMessage("Пароли не совпадают.");
+        return;
+    }
+    if(password.length<6){
+        setAuthMessage("Пароль должен содержать минимум 6 символов.");
+        return;
+    }
+
+    setAuthMessage("Регистрируем менеджера...","success");
+    const {data,error}=await sb.auth.signUp({
+        email:authEmailFromUsername(username),
+        password,
+        options:{data:{full_name:name,role:"manager",username}}
+    });
+
+    if(error){
+        setAuthMessage(error.message||"Не удалось зарегистрировать менеджера.");
+        return;
+    }
+
+    if(!data?.user || !data?.session){
+        setAuthMessage("Регистрация создана. В Supabase должен быть отключён Confirm email, чтобы менеджер сразу получил сессию.");
+        switchAuthMode("login");
+        return;
+    }
+
+    const {error:profileError}=await sb.rpc("dialog_register_manager",{
+        p_user_id:data.user.id,
+        p_username:username,
+        p_full_name:name
+    });
+
+    if(profileError){
+        console.error("Dialog profile create error:",profileError);
+        setAuthMessage("Аккаунт создан, но профиль менеджера не создан: " + (profileError.message||profileError));
+        await sb.auth.signOut();
+        return;
+    }
+
+    setAuthMessage("Регистрация выполнена. Теперь дождитесь разрешения администратора.","success");
+    showPendingAccess();
+}
+
+async function logoutUser(){
+    try{ await sb.auth.signOut(); }catch(error){ console.error(error); }
+}
+
+async function handleAuthSession(session){
+    authSession=session||null;
+    currentUser=session?.user||null;
+
+    if(cloudPollTimer){
+        clearInterval(cloudPollTimer);
+        cloudPollTimer=null;
+    }
+    if(accessPollTimer){
+        clearInterval(accessPollTimer);
+        accessPollTimer=null;
+    }
+    if(realtimeChannel){
+        sb.removeChannel(realtimeChannel);
+        realtimeChannel=null;
+    }
+
+    if(!currentUser){
+        currentProfile=null;
+        authReady=false;
+        hideAppShell();
+        showAuthLogin();
+        return;
+    }
+
+    try{
+        currentProfile=await loadCurrentProfile(currentUser.id);
+
+        if(!currentProfile){
+            await sb.auth.signOut();
+            setAuthMessage("Профиль пользователя не найден. Обратитесь к администратору.");
+            return;
+        }
+
+        if(!hasAppAccess()){
+            authReady=false;
+            showPendingAccess();
+            startAccessPoll();
+            return;
+        }
+
+        authReady=true;
+        applyRoleUI();
+        showAppShell();
+        await loadFromSupabase();
+        syncExistingStudentPaymentsToFinance();
+        if($("subjects") && !$("subjects").children.length)addSubjectRow();
+        renderAll();
+        startCloudSync();
+        if(isAdmin())loadAdminUsers();
+    }catch(error){
+        console.error("Auth profile error:",error);
+        setAuthMessage("Не удалось проверить права доступа: "+(error.message||error));
+        await sb.auth.signOut();
+    }
+}
+
+
+function startAccessPoll(){
+    if(accessPollTimer)clearInterval(accessPollTimer);
+    accessPollTimer=setInterval(async()=>{
+        if(!currentUser)return;
+        try{
+            const profile=await loadCurrentProfile(currentUser.id);
+            if(!profile){
+                await logoutUser();
+                return;
+            }
+            currentProfile=profile;
+            if(hasAppAccess()){
+                clearInterval(accessPollTimer);
+                accessPollTimer=null;
+                authReady=true;
+                applyRoleUI();
+                showAppShell();
+                await loadFromSupabase();
+                syncExistingStudentPaymentsToFinance();
+                if($('subjects') && !$('subjects').children.length)addSubjectRow();
+                renderAll();
+                startCloudSync();
+                if(isAdmin())loadAdminUsers();
+            }
+        }catch(error){
+            console.error('Access status check error:',error);
+        }
+    },5000);
+}
+
+async function checkCurrentAccess(){
+    if(!currentUser||!authReady||isAdmin())return;
+    try{
+        const profile=await loadCurrentProfile(currentUser.id);
+        if(!profile || !hasAppAccess()){
+            alert('Администратор отменил ваш доступ к системе.');
+            await logoutUser();
+        }else{
+            currentProfile=profile;
+            updateUserBadge();
+        }
+    }catch(error){
+        console.error('Access refresh error:',error);
+    }
+}
+
+async function initAuth(){
+    sb.auth.onAuthStateChange((event,session)=>{
+        setTimeout(()=>handleAuthSession(session),0);
+    });
+    const {data,error}=await sb.auth.getSession();
+    if(error)throw error;
+    await handleAuthSession(data.session);
+}
+
+async function loadAdminUsers(){
+    if(!isAdmin())return;
+
+    const {data,error}=await sb
+        .from("dialog_profiles")
+        .select("id,username,full_name,role,approved,created_at")
+        .order("created_at",{ascending:true});
+
+    if(error){
+        console.error("Admin users load error:",error);
+        if($("usersTable"))$("usersTable").innerHTML=`<tr><td colspan="7">Ошибка загрузки: ${escapeHtml(error.message)}</td></tr>`;
+        return;
+    }
+
+    const users=(data||[]).filter(x=>x.role==="manager");
+    let html="";
+
+    users.forEach((u,i)=>{
+        const status=u.approved?`<span class="admin-status approved">Разрешён</span>`:`<span class="admin-status pending">Ожидает</span>`;
+        const created=u.created_at?new Date(u.created_at).toLocaleString("ru-RU"):"—";
+        const action=u.approved
+            ?`<button class="danger" onclick="setManagerApproval('${u.id}',false)">Заблокировать</button>`
+            :`<button class="success" onclick="setManagerApproval('${u.id}',true)">Разрешить</button>`;
+        html+=`<tr>
+            <td>${i+1}</td>
+            <td><b>${escapeHtml(u.full_name||"—")}</b></td>
+            <td><b>${escapeHtml(u.username||"—")}</b></td>
+            <td>Менеджер</td>
+            <td>${status}</td>
+            <td>${created}</td>
+            <td><div class="actions">${action}</div></td>
+        </tr>`;
+    });
+
+    $("usersTable").innerHTML=html||`<tr><td colspan="7">Менеджеров пока нет.</td></tr>`;
+}
+
+async function setManagerApproval(userId,approved){
+    if(!isAdmin())return;
+    const {error}=await sb
+        .from("dialog_profiles")
+        .update({approved:!!approved})
+        .eq("id",userId)
+        .eq("role","manager");
+
+    if(error){
+        alert("Не удалось изменить доступ: "+error.message);
+        return;
+    }
+
+    const target=await sb
+        .from("dialog_profiles")
+        .select("username,full_name")
+        .eq("id",userId)
+        .maybeSingle();
+
+    const targetName=target.data?.full_name||target.data?.username||userId;
+    await logAudit(approved?"Разрешил доступ":"Заблокировал доступ","Доступы",userId,targetName,approved?"Менеджер получил доступ к системе":"Доступ менеджера заблокирован");
+    await loadAdminUsers();
+}
+
+/* ======================================================
+ЖУРНАЛ ДЕЙСТВИЙ — ОБЩИЙ ДЛЯ ВСЕХ УСТРОЙСТВ
+====================================================== */
+
+async function logAudit(action,entity,recordId=null,recordName="",details=""){
+    if(!authReady || !hasAppAccess())return false;
+    try{
+        const {error}=await sb.rpc("dialog_log_audit",{
+            p_action:String(action||""),
+            p_entity:String(entity||""),
+            p_record_id:recordId==null?null:String(recordId),
+            p_record_name:String(recordName||""),
+            p_details:String(details||"")
+        });
+        if(error)throw error;
+        return true;
+    }catch(error){
+        console.error("Audit log error:",error);
+        return false;
+    }
+}
+
+function auditMeta(key,item){
+    const x=item||{};
+    const map={
+        students:{entity:"Ученики",name:x.name||"Ученик"},
+        teachers:{entity:"Учителя",name:x.name||"Учитель"},
+        staff:{entity:"Персонал",name:x.name||x.fullName||"Сотрудник"},
+        salaries:{entity:"Зарплаты",name:x.teacherName||x.staffName||x.name||"Зарплата"},
+        salaryPayments:{entity:"Выплаты зарплат",name:x.teacherName||x.staffName||x.name||"Выплата"},
+        leavers:{entity:"Уходы",name:x.studentName||x.name||"Уход"},
+        incomes:{entity:"Финансы",name:`${x.studentName||"Ученик"}${x.subjectName?" · "+x.subjectName:""}`},
+        expenses:{entity:"Расходы",name:x.comment||x.name||"Расход"}
+    };
+    return map[key]||{entity:key,name:x.name||x.studentName||"Запись"};
+}
+
+function auditActionForChange(key,beforeExists){
+    const sectionMap={
+        students:"Ученики",teachers:"Учителя",staff:"Персонал",
+        salaries:"Зарплаты",salaryPayments:"Выплаты зарплат",leavers:"Уходы",
+        incomes:"Финансы",expenses:"Расходы"
+    };
+    const entity=sectionMap[key]||key;
+    return {entity,verb:beforeExists?"Изменил":"Добавил"};
+}
+
+async function auditChanges(localChanges,cloudBefore){
+    const tasks=[];
+    DB_ARRAY_KEYS.forEach(key=>{
+        const change=localChanges[key]||{changed:[],deleted:[]};
+        const before=Array.isArray(cloudBefore?.[key])?cloudBefore[key]:[];
+        const beforeMap=new Map(before.map(item=>[recordId(item),item]));
+
+        (change.changed||[]).forEach(item=>{
+            const id=recordId(item);
+            const meta=auditMeta(key,item);
+            const oldItem=beforeMap.get(id);
+            const action=oldItem?`Изменил`:`Добавил`;
+            tasks.push(logAudit(
+                action,
+                meta.entity,
+                id||null,
+                meta.name,
+                oldItem?"Изменение записи":"Новая запись"
+            ));
+        });
+
+        (change.deleted||[]).forEach(id=>{
+            const oldItem=beforeMap.get(String(id))||{};
+            const meta=auditMeta(key,oldItem);
+            tasks.push(logAudit(
+                "Удалил",
+                meta.entity,
+                id,
+                meta.name,
+                "Запись удалена"
+            ));
+        });
+    });
+
+    if(tasks.length)await Promise.allSettled(tasks);
+}
+
+async function loadAuditLog(){
+    if(!isAdmin())return;
+    const status=$("journalStatus");
+    const table=$("journalTable");
+    if(status)status.textContent="Загрузка...";
+    if(table)table.innerHTML='<tr><td colspan="8">Загрузка журнала...</td></tr>';
+
+    try{
+        const {data,error}=await sb
+            .from("dialog_audit_log")
+            .select("id,created_at,username,full_name,role,action,entity,record_name,details")
+            .order("created_at",{ascending:false})
+            .limit(500);
+
+        if(error)throw error;
+
+        const rows=data||[];
+        if(!rows.length){
+            table.innerHTML='<tr><td colspan="8">Журнал пока пуст.</td></tr>';
+            if(status)status.textContent="Записей: 0";
+            return;
+        }
+
+        table.innerHTML=rows.map((row,i)=>{
+            const dt=row.created_at?new Date(row.created_at).toLocaleString("ru-RU"):"—";
+            const role=row.role==="admin"?"Администратор":"Менеджер";
+            const user=row.full_name||row.username||"—";
+            return `<tr>
+                <td>${i+1}</td>
+                <td>${escapeHtml(dt)}</td>
+                <td><b>${escapeHtml(user)}</b><br><small>${escapeHtml(row.username||"")}</small></td>
+                <td>${escapeHtml(role)}</td>
+                <td>${escapeHtml(row.action||"—")}</td>
+                <td>${escapeHtml(row.entity||"—")}</td>
+                <td>${escapeHtml(row.record_name||"—")}</td>
+                <td>${escapeHtml(row.details||"—")}</td>
+            </tr>`;
+        }).join("");
+        if(status)status.textContent=`Записей: ${rows.length}`;
+    }catch(error){
+        console.error("Audit load error:",error);
+        if(table)table.innerHTML=`<tr><td colspan="8">Ошибка загрузки журнала: ${escapeHtml(error.message||error)}</td></tr>`;
+        if(status)status.textContent="Ошибка";
+    }
+}
+
+async function clearJournal(){
+    if(!isAdmin())return;
+    const ok=window.confirm("Вы действительно хотите очистить весь журнал действий?\n\nВсе записи будут удалены без возможности восстановления.");
+    if(!ok)return;
+
+    const status=$("journalStatus");
+    if(status)status.textContent="Очистка журнала...";
+
+    try{
+        const {data,error}=await sb.rpc("dialog_clear_audit_log", {});
+
+        if(error)throw error;
+        await loadAuditLog();
+        alert(`Журнал очищен. Удалено записей: ${Number(data||0)}.`);
+    }catch(error){
+        console.error("Journal clear error:",error);
+        if(status)status.textContent="Ошибка очистки";
+        alert("Не удалось очистить журнал: " + (error.message||error));
+    }
+}
+
+async function getCloudRow(){
+    if(!authReady)throw new Error("Пользователь не авторизован или доступ не подтверждён");
+    const response=await fetch(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`,
+        {
+            method:"GET",
+            headers:await supabaseHeaders({"Cache-Control":"no-cache"}),
+            cache:"no-store"
+        }
+    );
+
+    if(!response.ok){
+        const text=await response.text();
+        throw new Error(`Supabase GET ${response.status}: ${text}`);
+    }
+
+    const rows=await response.json();
+    return rows.length?rows[0]:null;
+}
+
+async function writeCloudDB(data){
+    const payload={
+        id:SUPABASE_ROW_ID,
+        data:normalizeDB(data),
+        updated_at:new Date().toISOString()
+    };
+
+    const patch=await fetch(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${SUPABASE_ROW_ID}`,
+        {
+            method:"PATCH",
+            headers:await supabaseHeaders({"Prefer":"return=minimal"}),
+            body:JSON.stringify({data:payload.data,updated_at:payload.updated_at})
+        }
+    );
+
+    if(!patch.ok){
+        const text=await patch.text();
+        throw new Error(`Supabase PATCH ${patch.status}: ${text}`);
+    }
+
+    return payload.updated_at;
+}
+
+async function createCloudDB(data){
+    const payload={
+        id:SUPABASE_ROW_ID,
+        data:normalizeDB(data),
+        updated_at:new Date().toISOString()
+    };
+
+    const response=await fetch(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`,
+        {
+            method:"POST",
+            headers:await supabaseHeaders({"Prefer":"return=minimal"}),
+            body:JSON.stringify(payload)
+        }
+    );
+
+    if(!response.ok){
+        const text=await response.text();
+        throw new Error(`Supabase POST ${response.status}: ${text}`);
+    }
+
+    return payload.updated_at;
+}
+
+async function saveToSupabase(){
+    if(cloudSaveInProgress){
+        cloudSaveQueued=true;
+        return false;
+    }
+
+    const localChanges=snapshotDiff(LAST_SYNC_DB,DB);
+    const hasChanges=DB_ARRAY_KEYS.some(key=>
+        localChanges[key].changed.length || localChanges[key].deleted.length
+    );
+
+    if(!hasChanges){
+        setSyncStatus("ok","Синхронизировано");
+        return true;
+    }
+
+    cloudSaveInProgress=true;
+    setSyncStatus("sync","Синхронизация...");
+
+    try{
+        /*
+        Изменения отправляются в серверную RPC-функцию.
+        Она ставит блокировку строки dialog_budget_data и объединяет изменения
+        внутри самой БД. Поэтому два устройства, отправившие данные
+        практически одновременно, не затирают друг друга.
+        */
+        const {data,error}=await sb.rpc("dialog_apply_changes",{
+            p_changes:localChanges
+        });
+
+        if(error)throw error;
+        if(!data?.data)throw new Error("Supabase не вернул обновлённую базу");
+
+        const cloudBefore=cloneData(LAST_SYNC_DB);
+        DB=normalizeDB(data.data);
+        LAST_SYNC_DB=cloneData(DB);
+        lastCloudUpdatedAt=data.updated_at||null;
+        saveLocal();
+
+        /* Журналируем именно изменения этого устройства. */
+        await auditChanges(localChanges,cloudBefore);
+
+        setSyncStatus("ok","Синхронизировано");
+        renderAll();
+        return true;
+    }catch(error){
+        console.error("Supabase save error:",error);
+        setSyncStatus("error","Ошибка синхронизации");
+        return false;
+    }finally{
+        cloudSaveInProgress=false;
+
+        if(cloudSaveQueued){
+            cloudSaveQueued=false;
+            setTimeout(saveToSupabase,50);
+        }
+    }
+}
+
+function save(){
+    saveLocal();
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer=setTimeout(saveToSupabase,250);
+}
+
+async function loadFromSupabase(){
+    setSyncStatus("sync","Загрузка облачных данных...");
+
+    try{
+        const localBefore=normalizeDB(DB);
+        const localChanges=snapshotDiff(LAST_SYNC_DB,localBefore);
+        const row=await getCloudRow();
+
+        if(row?.data){
+            const cloud=normalizeDB(row.data);
+            const hasLocalChanges=DB_ARRAY_KEYS.some(key=>
+                localChanges[key].changed.length || localChanges[key].deleted.length
+            );
+
+            /*
+            Сначала принимаем свежую облачную базу.
+            Затем, если на этом устройстве были ещё не отправленные
+            изменения, накладываем их поверх облачной версии и отправляем
+            через атомарную RPC-функцию.
+            */
+            DB=cloud;
+            LAST_SYNC_DB=cloneData(cloud);
+            lastCloudUpdatedAt=row.updated_at||null;
+            saveLocal();
+
+            if(hasLocalChanges){
+                DB=applyLocalChangesToCloud(cloud,localChanges);
+                await saveToSupabase();
+            }else{
+                setSyncStatus("ok","Синхронизировано");
+                renderAll();
+            }
+
+            return true;
+        }
+
+        /* Общей строки ещё нет: серверная функция создаст её при первой записи. */
+        if(DB_ARRAY_KEYS.some(key=>localBefore[key].length)){
+            DB=localBefore;
+            LAST_SYNC_DB=cloneData(emptyDB());
+            await saveToSupabase();
+        }else{
+            const {data,error}=await sb.rpc("dialog_apply_changes",{
+                p_changes:Object.fromEntries(DB_ARRAY_KEYS.map(key=>[
+                    key,{changed:[],deleted:[]}
+                ]))
+            });
+            if(error)throw error;
+            if(data?.data){
+                DB=normalizeDB(data.data);
+                LAST_SYNC_DB=cloneData(DB);
+                lastCloudUpdatedAt=data.updated_at||null;
+                saveLocal();
+            }
+            setSyncStatus("ok","Синхронизировано");
+            renderAll();
+        }
+        return true;
+    }catch(error){
+        console.error("Supabase load error:",error);
+        setSyncStatus("error","Нет связи с облачной базой");
+        return false;
+    }
+}
+
+async function syncFromCloud(){
+    if(cloudSaveInProgress)return;
+
+    try{
+        const row=await getCloudRow();
+        if(!row?.data)return;
+
+        const cloud=normalizeDB(row.data);
+        const localChanges=snapshotDiff(LAST_SYNC_DB,DB);
+        const hasLocalChanges=DB_ARRAY_KEYS.some(key=>
+            localChanges[key].changed.length || localChanges[key].deleted.length
+        );
+
+        if(hasLocalChanges){
+            /*
+            Даже если облако изменилось на другом устройстве, локальные
+            изменения отправляются в серверную merge-функцию и не затирают
+            чужие записи.
+            */
+            await saveToSupabase();
+            return;
+        }
+
+        const same=JSON.stringify(DB)===JSON.stringify(cloud);
+        if(!same){
+            DB=cloud;
+            LAST_SYNC_DB=cloneData(cloud);
+            lastCloudUpdatedAt=row.updated_at||null;
+            saveLocal();
+            renderAll();
+        }
+
+        setSyncStatus("ok","Синхронизировано");
+    }catch(error){
+        console.error("Supabase sync error:",error);
+        setSyncStatus("error","Ошибка синхронизации");
+    }
+}
+
+async function handleRealtimeBudgetUpdate(payload){
+    if(!authReady || cloudSaveInProgress)return;
+    try{
+        const row=payload?.new;
+        if(!row?.data)return;
+
+        const localChanges=snapshotDiff(LAST_SYNC_DB,DB);
+        const hasLocalChanges=DB_ARRAY_KEYS.some(key=>
+            localChanges[key].changed.length || localChanges[key].deleted.length
+        );
+
+        if(hasLocalChanges){
+            await saveToSupabase();
+            return;
+        }
+
+        DB=normalizeDB(row.data);
+        LAST_SYNC_DB=cloneData(DB);
+        lastCloudUpdatedAt=row.updated_at||null;
+        saveLocal();
+        renderAll();
+        setSyncStatus("ok","Синхронизировано");
+    }catch(error){
+        console.error("Realtime sync error:",error);
+        setSyncStatus("error","Ошибка синхронизации");
+    }
+}
+
+function startRealtimeSync(){
+    if(realtimeChannel){
+        sb.removeChannel(realtimeChannel);
+        realtimeChannel=null;
+    }
+
+    realtimeChannel=sb.channel("kidsmath-budget-realtime")
+        .on(
+            "postgres_changes",
+            {
+                event:"*",
+                schema:"public",
+                table:SUPABASE_TABLE,
+                filter:`id=eq.${SUPABASE_ROW_ID}`
+            },
+            payload=>handleRealtimeBudgetUpdate(payload)
+        )
+        .subscribe(status=>{
+            if(status==="SUBSCRIBED")setSyncStatus("ok","Онлайн-синхронизация");
+        });
+}
+
+
+function startCloudSync(){
+    startRealtimeSync();
+    if(cloudPollTimer)clearInterval(cloudPollTimer);
+    cloudPollTimer=setInterval(async()=>{
+        await syncFromCloud();
+        await checkCurrentAccess();
+    },SYNC_POLL_MS);
+}
+
+function $(id){
+    return document.getElementById(id);
+}
+
+function money(n){
+    return Number(n||0).toLocaleString("ru-RU")+" сум";
+}
+
+function today(){
+    return new Date().toISOString().slice(0,10);
+}
+
+function currentMonth(){
+    return today().slice(0,7);
+}
+
+function monthOf(date){
+    return date ? date.slice(0,7) : "";
+}
+
+function monthName(m){
+
+    if(!m)return "—";
+
+    const names=[
+        "Январь","Февраль","Март","Апрель",
+        "Май","Июнь","Июль","Август",
+        "Сентябрь","Октябрь","Ноябрь","Декабрь"
+    ];
+
+    const p=m.split("-");
+
+    return names[Number(p[1])-1]+" "+p[0];
+}
+
+function monthsBetween(from,to){
+
+    const result=[];
+
+    let d=new Date(from.slice(0,7)+"-01");
+    const end=new Date(to.slice(0,7)+"-01");
+
+    while(d<=end){
+
+        result.push(
+            d.getFullYear()+"-"+
+            String(d.getMonth()+1).padStart(2,"0")
+        );
+
+        d.setMonth(d.getMonth()+1);
+    }
+
+    return result;
+}
+
+
+/* ======================================================
+NAVIGATION
+====================================================== */
+
+function showPage(id,button){
+
+    if(id==="journal" && !isAdmin())return;
+
+    document.querySelectorAll(".page")
+    .forEach(x=>x.classList.remove("active"));
+
+    $(id).classList.add("active");
+
+    document.querySelectorAll(".tabs button")
+    .forEach(x=>x.classList.remove("active"));
+
+    button.classList.add("active");
+
+    renderAll();
+    if(id==="journal" && isAdmin())loadAuditLog();
+}
+
+
+/* ======================================================
+STUDENTS
+====================================================== */
+
+function addSubjectRow(data={}){
+
+    const row=document.createElement("div");
+
+    row.className="subject-row";
+    row.dataset.subjectId=data.id||"";
+
+    row.innerHTML=`
+
+        <div>
+            <label>Предмет</label>
+            <input class="subName"
+                   value="${data.name||""}"
+                   placeholder="Математика">
+        </div>
+
+        <div>
+            <label>Преподаватель</label>
+            <select class="subTeacher">
+                <option value="">Выберите</option>
+
+                ${DB.teachers.map(t=>`
+                    <option value="${t.id}"
+                    ${String(t.id)===String(data.teacherId)?"selected":""}>
+                    ${t.name} — ${t.subject}
+                    </option>
+                `).join("")}
+
+            </select>
+        </div>
+
+        <div>
+            <label>Тариф</label>
+            <input type="number"
+                   class="subPrice"
+                   value="${data.price||""}">
+        </div>
+
+        <div>
+            <label>Оплачено</label>
+            <input type="number"
+                   class="subPaid"
+                   value="${data.paid||""}">
+        </div>
+
+        <button class="danger"
+                onclick="this.parentElement.remove()">
+            🗑
+        </button>
+
+    `;
+
+    $("subjects").appendChild(row);
+}
+
+
+function saveStudent(){
+
+    const id=$("studentId").value;
+
+    const subjects=[];
+
+    document.querySelectorAll(".subject-row")
+    .forEach(row=>{
+
+        const name=row.querySelector(".subName").value.trim();
+
+        if(!name)return;
+
+        subjects.push({
+
+            id:row.dataset.subjectId ||
+               (Date.now()+Math.random()),
+
+            name:name,
+
+            teacherId:
+                row.querySelector(".subTeacher").value,
+
+            price:
+                Number(row.querySelector(".subPrice").value||0),
+
+            paid:
+                Number(row.querySelector(".subPaid").value||0)
+
+        });
+
+    });
+
+    if(!$("studentName").value.trim()){
+        alert("Введите имя ученика");
+        return;
+    }
+
+    if(subjects.length===0){
+        alert("Добавьте хотя бы один предмет");
+        return;
+    }
+
+    /*
+    Сохраняем старые оплаты и создаём в Финансах
+    только разницу между старой и новой суммой.
+    Это защищает от дублей при обычном редактировании ученика.
+    */
+    let existingStudent=null;
+
+    if(id){
+        existingStudent=DB.students.find(
+            x=>String(x.id)===String(id)
+        );
+
+        if(!existingStudent)return;
+
+        for(const newSub of subjects){
+
+            const oldSub=(existingStudent.subjects||[])
+                .find(x=>String(x.id)===String(newSub.id));
+
+            const oldPaid=Number(oldSub?.paid||0);
+            const newPaid=Number(newSub.paid||0);
+
+            /*
+            Нельзя уменьшить "Оплачено" ниже уже записанных
+            финансовых операций по этому предмету.
+            */
+            const financePaid=DB.incomes
+                .filter(x=>
+                    String(x.studentId)===String(existingStudent.id) &&
+                    String(x.subjectId)===String(newSub.id)
+                )
+                .reduce(
+                    (a,x)=>a+Number(x.amount||0),0
+                );
+
+            if(newPaid<financePaid){
+                alert(
+                    `По ученику "${existingStudent.name}" по предмету "${newSub.name}" `+
+                    `в Финансах уже отражено ${money(financePaid)}.\\n\\n`+
+                    `Сумма "Оплачено" не может быть меньше этой суммы.`
+                );
+                return;
+            }
+
+            const difference=newPaid-oldPaid;
+
+            if(difference>0){
+                DB.incomes.push({
+                    id:Date.now()+Math.random(),
+                    date:today(),
+                    studentId:String(existingStudent.id),
+                    studentName:existingStudent.name,
+                    subjectId:String(newSub.id),
+                    subjectName:newSub.name,
+                    month:currentMonth(),
+                    amount:difference,
+                    comment:"Оплата внесена через карточку ученика",
+                    source:"student_card"
+                });
+            }
+        }
+
+    }else{
+
+        /*
+        Новый ученик: если в поле "Оплачено" сразу указана сумма,
+        она автоматически становится доходом в Финансах.
+        */
+        const studentId=Date.now();
+
+        subjects.forEach(sub=>{
+
+            if(Number(sub.paid||0)>0){
+
+                DB.incomes.push({
+                    id:Date.now()+Math.random(),
+                    date:today(),
+                    studentId:String(studentId),
+                    studentName:$("studentName").value.trim(),
+                    subjectId:String(sub.id),
+                    subjectName:sub.name,
+                    month:currentMonth(),
+                    amount:Number(sub.paid||0),
+                    comment:"Оплата внесена при добавлении ученика",
+                    source:"student_card"
+                });
+
+            }
+
+        });
+
+        const student={
+            id:studentId,
+
+            name:$("studentName").value.trim(),
+
+            phone:$("studentPhone").value.trim(),
+
+            group:$("studentGroup").value,
+
+            start:$("studentStart").value||today(),
+
+            status:$("studentStatus").value,
+
+            subjects:subjects,
+
+            history:{}
+
+        };
+
+        student.history[monthOf(student.start)]={
+            status:student.status,
+            group:student.group,
+            subjects:JSON.parse(JSON.stringify(subjects))
+        };
+
+        DB.students.push(student);
+    }
+
+    if(existingStudent){
+
+        existingStudent.name=$("studentName").value.trim();
+        existingStudent.phone=$("studentPhone").value.trim();
+        existingStudent.group=$("studentGroup").value;
+        existingStudent.start=$("studentStart").value;
+        existingStudent.status=$("studentStatus").value;
+        existingStudent.subjects=subjects;
+
+        existingStudent.history=existingStudent.history||{};
+
+        existingStudent.history[currentMonth()]={
+            status:existingStudent.status,
+            group:existingStudent.group,
+            subjects:JSON.parse(JSON.stringify(subjects))
+        };
+    }
+
+    save();
+
+    resetStudentForm();
+
+    renderAll();
+
+}
+
+
+function editStudent(id){
+
+    const s=DB.students.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!s)return;
+
+    $("studentId").value=s.id;
+    $("studentFormTitle").textContent="✏️ Редактировать ученика";
+
+    $("studentName").value=s.name;
+    $("studentPhone").value=s.phone||"";
+    $("studentGroup").value=s.group||"";
+    $("studentStart").value=s.start||today();
+    $("studentStatus").value=s.status||"active";
+
+    $("subjects").innerHTML="";
+
+    (s.subjects||[]).forEach(addSubjectRow);
+
+    window.scrollTo({top:0,behavior:"smooth"});
+}
+
+
+function deleteStudent(id){
+
+    const s=DB.students.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!s)return;
+
+    if(!confirm(
+        `Удалить ученика "${s.name}"?\n\n`+
+        "Связанные записи трансфера также будут удалены."
+    ))return;
+
+    DB.students=DB.students.filter(
+        x=>String(x.id)!==String(id)
+    );
+
+    save();
+
+    renderAll();
+}
+
+
+function resetStudentForm(){
+
+    $("studentId").value="";
+    $("studentFormTitle").textContent="➕ Добавить ученика";
+
+    $("studentName").value="";
+    $("studentPhone").value="";
+    $("studentGroup").value="";
+    $("studentStart").value=today();
+    $("studentStatus").value="active";
+
+    $("subjects").innerHTML="";
+
+    addSubjectRow();
+}
+
+
+function reconcileStudentEducationIncomeLedger(){
+    /* Синхронизирует сумму "Оплачено" в карточках учеников с Финансами.
+       Добавляется только недостающая разница, поэтому дубли не создаются. */
+    let changed=false;
+    DB.students.forEach(student=>{
+        (student.subjects||[]).forEach(subject=>{
+            const paid=Number(subject.paid||0);
+            if(paid<=0)return;
+            const financePaid=DB.incomes.filter(x=>
+                String(x.studentId)===String(student.id) &&
+                (String(x.subjectId||"")===String(subject.id) ||
+                 String(x.subjectName||"").trim()===String(subject.name||"").trim())
+            ).reduce((sum,x)=>sum+Number(x.amount||0),0);
+            const difference=paid-financePaid;
+            if(difference>0){
+                DB.incomes.push({
+                    id:Date.now()+Math.random(),
+                    date:today(),
+                    studentId:String(student.id),
+                    studentName:student.name,
+                    subjectId:String(subject.id),
+                    subjectName:subject.name,
+                    month:currentMonth(),
+                    amount:difference,
+                    comment:"Синхронизация оплаты из карточки ученика",
+                    source:"student_card_sync"
+                });
+                changed=true;
+            }
+        });
+    });
+    if(changed) save();
+    return changed;
+}
+
+
+function studentFinancials(s){
+
+    let tariff=0;
+    let paid=0;
+
+    (s.subjects||[]).forEach(sub=>{
+
+        tariff+=Number(sub.price||0);
+        paid+=Number(sub.paid||0);
+
+    });
+
+    return{
+        tariff,
+        paid,
+        debt:Math.max(tariff-paid,0)
+    };
+
+}
+
+
+function renderStudents(){
+
+    DB.students.forEach(s=>{
+        if(typeof s.phone!=="string") s.phone="";
+    });
+
+    let html="";
+
+    DB.students.forEach((s,i)=>{
+
+        const f=studentFinancials(s);
+
+        const subjects=(s.subjects||[])
+        .map(sub=>{
+
+            const teacher=DB.teachers.find(
+                t=>String(t.id)===String(sub.teacherId)
+            );
+
+            return `${sub.name}${teacher?" — "+teacher.name:""}`;
+
+        }).join("<br>");
+
+        html+=`
+
+        <tr>
+
+            <td>${i+1}</td>
+
+            <td><b>${s.name}</b></td>
+
+            <td>${s.phone||"—"}</td>
+
+            <td>${s.group||"—"}</td>
+
+            <td>${subjects||"—"}</td>
+
+            <td class="paid">${money(f.paid)}</td>
+
+            <td class="${f.debt>0?"debt":"paid"}">
+                ${money(f.debt)}
+            </td>
+
+            <td>
+
+                <select
+                onchange="changeStudentStatus(${s.id},this.value)">
+
+                    <option value="active"
+                    ${s.status==="active"?"selected":""}>
+                    🟢 Активный
+                    </option>
+
+                    <option value="inactive"
+                    ${s.status==="inactive"?"selected":""}>
+                    🔴 Неактивный
+                    </option>
+
+                </select>
+
+            </td>
+
+            <td>
+
+                <div class="actions">
+
+                    <button class="secondary"
+                    onclick="editStudent(${s.id})">
+                    ✏️
+                    </button>
+
+                    <button class="danger"
+                    onclick="deleteStudent(${s.id})">
+                    🗑
+                    </button>
+
+                </div>
+
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    $("studentsTable").innerHTML=
+        html||
+        `<tr><td colspan="10">Нет учеников</td></tr>`;
+}
+
+
+function changeStudentStatus(id,status){
+
+    const s=DB.students.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!s)return;
+
+    s.status=status;
+
+    s.history=s.history||{};
+
+    s.history[currentMonth()]={
+        status,
+        group:s.group,
+        subjects:JSON.parse(JSON.stringify(s.subjects||[]))
+    };
+
+    save();
+    renderAll();
+}
+
+
+/* ======================================================
+TEACHERS
+====================================================== */
+
+function saveTeacher(){
+
+    const id=$("teacherId").value;
+
+    const data={
+        name:$("teacherName").value.trim(),
+        subject:$("teacherSubject").value.trim(),
+        status:$("teacherStatus").value
+    };
+
+    if(!data.name){
+        alert("Введите имя");
+        return;
+    }
+
+    if(id){
+
+        const t=DB.teachers.find(
+            x=>String(x.id)===String(id)
+        );
+
+        Object.assign(t,data);
+
+    }else{
+
+        DB.teachers.push({
+            id:Date.now(),
+            ...data,
+            history:{
+                [currentMonth()]:data.status
+            }
+        });
+
+    }
+
+    save();
+
+    $("teacherId").value="";
+    $("teacherName").value="";
+    $("teacherSubject").value="";
+
+    renderAll();
+}
+
+
+function editTeacher(id){
+
+    const t=DB.teachers.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!t)return;
+
+    $("teacherId").value=t.id;
+    $("teacherName").value=t.name;
+    $("teacherSubject").value=t.subject;
+    $("teacherStatus").value=t.status;
+
+    window.scrollTo({top:0,behavior:"smooth"});
+}
+
+
+function deleteTeacher(id){
+
+    const t=DB.teachers.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!t)return;
+
+    if(!confirm(
+        `Удалить преподавателя "${t.name}"?\n\n`+
+        "Привязка этого преподавателя к предметам учеников будет удалена."
+    ))return;
+
+    DB.teachers=DB.teachers.filter(
+        x=>String(x.id)!==String(id)
+    );
+
+    DB.students.forEach(s=>{
+
+        (s.subjects||[]).forEach(sub=>{
+
+            if(String(sub.teacherId)===String(id)){
+                sub.teacherId="";
+            }
+
+        });
+
+    });
+
+    save();
+    renderAll();
+}
+
+
+function renderTeachers(){
+
+    let html="";
+
+    DB.teachers.forEach((t,i)=>{
+
+        const teacherStudents=[];
+
+        DB.students.forEach(s=>{
+            (s.subjects||[]).forEach(sub=>{
+                if(String(sub.teacherId)===String(t.id)){
+                    teacherStudents.push({
+                        student:s,
+                        subject:sub
+                    });
+                }
+            });
+        });
+
+        const count=[...new Set(
+            teacherStudents.map(x=>String(x.student.id))
+        )].length;
+
+        const groups={};
+
+        teacherStudents.forEach(item=>{
+            const group=item.student.group||"Без группы";
+
+            if(!groups[group]){
+                groups[group]=[];
+            }
+
+            groups[group].push(item);
+        });
+
+        let details="";
+
+        Object.keys(groups)
+        .sort((a,b)=>a.localeCompare(b,"ru",{numeric:true}))
+        .forEach(group=>{
+
+            details+=`
+                <div class="teacher-group">
+                    <h4>📚 ${group} — ${[...new Set(
+                        groups[group].map(x=>String(x.student.id))
+                    )].length} ученик(ов)</h4>
+
+                    <div class="table-wrap">
+                        <table class="teacher-student-table">
+                            <thead>
+                                <tr>
+                                    <th>Ф.И.О.</th>
+                                    <th>Группа</th>
+                                    <th>Предмет</th>
+                                    <th>Тариф</th>
+                                    <th>Оплатил</th>
+                                    <th>Осталось</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${groups[group].map(item=>{
+
+                                    const s=item.student;
+                                    const sub=item.subject;
+
+                                    const tariff=Number(sub.price||0);
+                                    const paid=Number(sub.paid||0);
+                                    const remaining=Math.max(tariff-paid,0);
+
+                                    return`
+                                        <tr>
+                                            <td><b>${s.name}</b></td>
+                                            <td>${s.group||"—"}</td>
+                                            <td>${sub.name||"—"}</td>
+                                            <td>${money(tariff)}</td>
+                                            <td class="${paid>0?"paid":""}">
+                                                ${money(paid)}
+                                            </td>
+                                            <td class="${remaining>0?"debt":"paid"}">
+                                                ${money(remaining)}
+                                            </td>
+                                            <td class="${
+                                                s.status==="active"
+                                                ?"teacher-status-active"
+                                                :"teacher-status-inactive"
+                                            }">
+                                                ${
+                                                    s.status==="active"
+                                                    ?"🟢 Активный — ходит"
+                                                    :"🔴 Неактивный — не ходит"
+                                                }
+                                            </td>
+                                        </tr>
+                                    `;
+
+                                }).join("")}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+        });
+
+        if(!details){
+            details=`
+                <div class="teacher-empty">
+                    У этого преподавателя пока нет учеников.
+                </div>
+            `;
+        }
+
+        html+=`
+            <tr>
+                <td>${i+1}</td>
+
+                <td>
+                    <button
+                        class="teacher-name-btn"
+                        onclick="toggleTeacherStudents(${t.id})"
+                        title="Показать учеников">
+                        👩‍🏫 ${t.name}
+                    </button>
+                </td>
+
+                <td>${t.subject||"—"}</td>
+
+                <td>
+                    <button
+                        class="secondary"
+                        onclick="toggleTeacherStudents(${t.id})">
+                        👨‍🎓 ${count}
+                    </button>
+                </td>
+
+                <td>
+                    <select
+                        onchange="changeTeacherStatus(${t.id},this.value)">
+
+                        <option value="active"
+                        ${t.status==="active"?"selected":""}>
+                        🟢 Активный
+                        </option>
+
+                        <option value="inactive"
+                        ${t.status==="inactive"?"selected":""}>
+                        🔴 Неактивный
+                        </option>
+
+                    </select>
+                </td>
+
+                <td>
+                    <div class="actions">
+
+                        <button
+                            class="secondary"
+                            onclick="editTeacher(${t.id})">
+                            ✏️
+                        </button>
+
+                        <button
+                            class="danger"
+                            onclick="deleteTeacher(${t.id})">
+                            🗑
+                        </button>
+
+                    </div>
+                </td>
+            </tr>
+
+            <tr
+                id="teacherStudents-${t.id}"
+                class="teacher-students">
+
+                <td
+                    colspan="6"
+                    class="teacher-students-cell">
+
+                    ${details}
+
+                </td>
+            </tr>
+        `;
+    });
+
+    $("teachersTable").innerHTML=
+        html||
+        `<tr><td colspan="6">Нет преподавателей</td></tr>`;
+}
+
+
+function toggleTeacherStudents(id){
+
+    const row=$("teacherStudents-"+id);
+
+    if(!row)return;
+
+    row.classList.toggle("open");
+}
+
+
+function changeTeacherStatus(id,status){
+
+    const t=DB.teachers.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!t)return;
+
+    t.status=status;
+
+    t.history=t.history||{};
+    t.history[currentMonth()]=status;
+
+    save();
+    renderAll();
+}
+
+
+/* ======================================================
+STAFF
+====================================================== */
+
+function saveStaff(){
+
+    const id=$("staffId").value;
+
+    const data={
+        name:$("staffName").value.trim(),
+        position:$("staffPosition").value.trim(),
+        status:$("staffStatus").value
+    };
+
+    if(!data.name){
+        alert("Введите имя");
+        return;
+    }
+
+    if(id){
+
+        const s=DB.staff.find(
+            x=>String(x.id)===String(id)
+        );
+
+        Object.assign(s,data);
+
+    }else{
+
+        DB.staff.push({
+            id:Date.now(),
+            ...data
+        });
+
+    }
+
+    save();
+
+    $("staffId").value="";
+    $("staffName").value="";
+    $("staffPosition").value="";
+
+    renderAll();
+}
+
+
+function editStaff(id){
+
+    const s=DB.staff.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!s)return;
+
+    $("staffId").value=s.id;
+    $("staffName").value=s.name;
+    $("staffPosition").value=s.position;
+    $("staffStatus").value=s.status;
+
+    window.scrollTo({top:0,behavior:"smooth"});
+}
+
+
+function deleteStaff(id){
+
+    const s=DB.staff.find(
+        x=>String(x.id)===String(id)
+    );
+
+    if(!s)return;
+
+    if(!confirm(`Удалить "${s.name}"?`))
+        return;
+
+    DB.staff=DB.staff.filter(
+        x=>String(x.id)!==String(id)
+    );
+
+    save();
+    renderAll();
+}
+
+
+function employees(){
+
+    return [
+
+        ...DB.teachers.map(t=>({
+            id:"teacher_"+t.id,
+            name:t.name,
+            position:"Преподаватель"
+        })),
+
+        ...DB.staff.map(s=>({
+            id:"staff_"+s.id,
+            name:s.name,
+            position:s.position
+        }))
+
+    ];
+
+}
+
+
+function renderStaff(){
+
+    let html="";
+
+    DB.staff.forEach((s,i)=>{
+
+        html+=`
+
+        <tr>
+
+            <td>${i+1}</td>
+            <td>${s.name}</td>
+            <td>${s.position}</td>
+            <td>${s.status==="active"?"🟢":"🔴"}</td>
+
+            <td>
+
+                <button class="secondary"
+                onclick="editStaff(${s.id})">
+                ✏️
+                </button>
+
+                <button class="danger"
+                onclick="deleteStaff(${s.id})">
+                🗑
+                </button>
+
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    $("staffTable").innerHTML=
+        html||
+        `<tr><td colspan="5">Нет персонала</td></tr>`;
+}
+
+
+/* ======================================================
+SALARY
+====================================================== */
+
+function renderSalaryEmployees(){
+
+    $("salaryEmployee").innerHTML=
+        `<option value="">Выберите сотрудника</option>`+
+
+        employees().map(e=>`
+
+            <option value="${e.id}">
+                ${e.name} — ${e.position}
+            </option>
+
+        `).join("");
+
+}
+
+
+function saveSalary(){
+
+    const employeeId=$("salaryEmployee").value;
+
+    if(!employeeId){
+        alert("Выберите сотрудника");
+        return;
+    }
+
+    const employee=employees().find(
+        x=>x.id===employeeId
+    );
+
+    const month=$("salaryMonth").value||currentMonth();
+
+    let salary=DB.salaries.find(
+        x=>x.employeeId===employeeId
+        &&x.month===month
+    );
+
+    const accrued=Number(
+        $("salaryAccrued").value||0
+    );
+
+    const payment=Number(
+        $("salaryPayment").value||0
+    );
+
+    if(!salary){
+
+        salary={
+            id:Date.now(),
+            employeeId,
+            employeeName:employee.name,
+            position:employee.position,
+            month,
+            accrued
+        };
+
+        DB.salaries.push(salary);
+
+    }else if(accrued>0){
+
+        salary.accrued=accrued;
+
+    }
+
+    if(payment>0){
+
+        DB.salaryPayments.push({
+
+            id:Date.now()+Math.random(),
+
+            salaryId:salary.id,
+
+            employeeId,
+
+            employeeName:employee.name,
+
+            month,
+
+            amount:payment,
+
+            date:$("salaryDate").value||today(),
+
+            comment:$("salaryComment").value||""
+
+        });
+
+    }
+
+    save();
+
+    $("salaryAccrued").value="";
+    $("salaryPayment").value="";
+    $("salaryComment").value="";
+
+    renderAll();
+}
+
+
+function salaryStat(s){
+
+    const payments=DB.salaryPayments.filter(
+        p=>String(p.salaryId)===String(s.id)
+    );
+
+    const paid=payments.reduce(
+        (a,p)=>a+Number(p.amount||0),0
+    );
+
+    let last="";
+
+    payments.forEach(p=>{
+        if(!last||p.date>last)last=p.date;
+    });
+
+    return{
+        paid,
+        debt:Math.max(Number(s.accrued||0)-paid,0),
+        last
+    };
+
+}
+
+
+function deleteSalary(id){
+
+    if(!confirm(
+        "Удалить начисление и все выплаты по нему?"
+    ))return;
+
+    DB.salaries=DB.salaries.filter(
+        x=>String(x.id)!==String(id)
+    );
+
+    DB.salaryPayments=
+        DB.salaryPayments.filter(
+            x=>String(x.salaryId)!==String(id)
+        );
+
+    save();
+    renderAll();
+}
+
+
+function deleteSalaryPayment(id){
+
+    if(!confirm("Удалить эту выплату?"))
+        return;
+
+    DB.salaryPayments=
+        DB.salaryPayments.filter(
+            x=>String(x.id)!==String(id)
+        );
+
+    save();
+    renderAll();
+}
+
+
+function renderSalary(){
+
+    renderSalaryEmployees();
+
+    let rows=DB.salaries.map(s=>({
+
+        ...s,
+        ...salaryStat(s)
+
+    }));
+
+    rows.sort((a,b)=>{
+
+        if(b.debt!==a.debt)
+            return b.debt-a.debt;
+
+        if(!a.last)return -1;
+        if(!b.last)return 1;
+
+        return b.last.localeCompare(a.last);
+
+    });
+
+    let html="";
+
+    rows.forEach((s,i)=>{
+
+        html+=`
+
+        <tr>
+
+            <td>${i+1}</td>
+            <td>${s.employeeName}</td>
+            <td>${monthName(s.month)}</td>
+            <td>${money(s.accrued)}</td>
+            <td class="paid">${money(s.paid)}</td>
+
+            <td class="${s.debt>0?"debt":"paid"}">
+                ${money(s.debt)}
+            </td>
+
+            <td>${s.last||"—"}</td>
+
+            <td>
+                <button class="danger"
+                onclick="deleteSalary(${s.id})">
+                🗑
+                </button>
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    $("salaryTable").innerHTML=
+        html||
+        `<tr><td colspan="8">Нет зарплат</td></tr>`;
+
+
+    let history="";
+
+    DB.salaryPayments
+    .slice()
+    .sort((a,b)=>b.date.localeCompare(a.date))
+    .forEach(p=>{
+
+        history+=`
+
+        <tr>
+
+            <td>${p.employeeName}</td>
+            <td>${monthName(p.month)}</td>
+            <td>${money(p.amount)}</td>
+            <td>${p.date}</td>
+            <td>${p.comment||"—"}</td>
+
+            <td>
+                <button class="danger"
+                onclick="deleteSalaryPayment(${p.id})">
+                🗑
+                </button>
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    $("salaryHistory").innerHTML=
+        history||
+        `<tr><td colspan="6">Нет выплат</td></tr>`;
+}
+
+
+/* ======================================================
+LEAVERS
+====================================================== */
+
+function renderLeaverLists(){
+
+    $("leaverStudent").innerHTML=
+        `<option value="">Выберите ученика</option>`+
+
+        DB.students.map(s=>`
+            <option value="${s.id}">
+                ${s.name}
+            </option>
+        `).join("");
+
+    $("leaverTeacher").innerHTML=
+        `<option value="">Выберите преподавателя</option>`+
+
+        DB.teachers.map(t=>`
+            <option value="${t.id}">
+                ${t.name} — ${t.subject}
+            </option>
+        `).join("");
+
+}
+
+
+function saveLeaver(){
+
+    const studentId=$("leaverStudent").value;
+
+    if(!studentId){
+        alert("Выберите ученика");
+        return;
+    }
+
+    DB.leavers.push({
+
+        id:Date.now(),
+
+        studentId,
+
+        teacherId:$("leaverTeacher").value,
+
+        date:$("leaverDate").value||today(),
+
+        reason:$("leaverReason").value,
+
+        comment:$("leaverComment").value
+
+    });
+
+    const s=DB.students.find(
+        x=>String(x.id)===String(studentId)
+    );
+
+    if(s){
+
+        s.status="inactive";
+
+        s.history=s.history||{};
+
+        s.history[currentMonth()]={
+            status:"inactive",
+            group:s.group,
+            subjects:s.subjects
+        };
+
+    }
+
+    save();
+
+    $("leaverComment").value="";
+
+    renderAll();
+
+    alert("Уход сохранён");
+}
+
+
+function deleteLeaver(id){
+
+    if(!confirm("Удалить запись?"))
+        return;
+
+    DB.leavers=DB.leavers.filter(
+        x=>String(x.id)!==String(id)
+    );
+
+    save();
+    renderAll();
+}
+
+
+function renderLeavers(){
+
+    let html="";
+
+    DB.leavers.forEach(l=>{
+
+        const s=DB.students.find(
+            x=>String(x.id)===String(l.studentId)
+        );
+
+        const t=DB.teachers.find(
+            x=>String(x.id)===String(l.teacherId)
+        );
+
+        html+=`
+
+        <tr>
+
+            <td>${s?s.name:"—"}</td>
+            <td>${t?t.name:"—"}</td>
+            <td>${l.date}</td>
+            <td>${l.reason}</td>
+            <td>${l.comment||"—"}</td>
+
+            <td>
+                <button class="danger"
+                onclick="deleteLeaver(${l.id})">
+                🗑
+                </button>
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    $("leaversTable").innerHTML=
+        html||
+        `<tr><td colspan="6">Нет записей</td></tr>`;
+}
+
+
+/* ======================================================
+FINANCE — ОПЛАТА УЧЕНИКА
+====================================================== */
+
+function renderIncomeStudents(){
+    $("incomeStudent").innerHTML=
+        `<option value="">Выберите ученика</option>`+
+        DB.students.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+}
+
+function loadStudentSubjectsForPayment(){
+    const studentId=$("incomeStudent").value;
+    const select=$("incomeSubject");
+    select.innerHTML=`<option value="">Выберите предмет</option>`;
+    if(!studentId){
+        $("paymentInfo").textContent="Выберите ученика.";
+        return;
+    }
+    const s=DB.students.find(x=>String(x.id)===String(studentId));
+    if(!s)return;
+    (s.subjects||[]).forEach(sub=>{
+        const teacher=DB.teachers.find(t=>String(t.id)===String(sub.teacherId));
+        const option=document.createElement("option");
+        option.value=sub.id;
+        option.textContent=`${sub.name} — ${money(sub.price)}${teacher?" — "+teacher.name:""}`;
+        select.appendChild(option);
+    });
+    showPaymentInfo();
+}
+
+function getSelectedPaymentSubject(){
+    const studentId=$("incomeStudent").value;
+    const subjectId=$("incomeSubject").value;
+    const student=DB.students.find(s=>String(s.id)===String(studentId));
+    if(!student)return null;
+    return (student.subjects||[]).find(sub=>String(sub.id)===String(subjectId));
+}
+
+function showPaymentInfo(){
+    const sub=getSelectedPaymentSubject();
+    if(!sub){ $("paymentInfo").textContent="Выберите ученика и предмет."; return; }
+    const amount=Number($("incomeAmount").value||0);
+    const price=Number(sub.price||0);
+    const alreadyPaid=Number(sub.paid||0);
+    const afterPayment=alreadyPaid+amount;
+    const remaining=Math.max(price-afterPayment,0);
+    $("paymentInfo").innerHTML=`Тариф: <b>${money(price)}</b><br>Уже оплачено: <b>${money(alreadyPaid)}</b><br>Оплата сейчас: <b>${money(amount)}</b><br>Остаток: <b class="${remaining>0?"debt":"paid"}">${money(remaining)}</b>`;
+}
+
+function addIncome(){
+    const studentId=$("incomeStudent").value;
+    const subjectId=$("incomeSubject").value;
+    const amount=Number($("incomeAmount").value||0);
+    if(!studentId){alert("Выберите ученика");return;}
+    if(!subjectId){alert("Выберите предмет");return;}
+    if(amount<=0){alert("Введите сумму оплаты");return;}
+    const student=DB.students.find(s=>String(s.id)===String(studentId));
+    if(!student)return;
+    const subject=(student.subjects||[]).find(x=>String(x.id)===String(subjectId));
+    if(!subject)return;
+    subject.paid=Number(subject.paid||0)+amount;
+    DB.incomes.push({
+        id:Date.now()+Math.random(),
+        date:$("incomeDate").value||today(),
+        studentId,
+        studentName:student.name,
+        subjectId,
+        subjectName:subject.name,
+        month:$("incomeMonth").value||currentMonth(),
+        amount,
+        comment:$("incomeComment").value||"",
+        incomeType:"education"
+    });
+    save();
+    $("incomeAmount").value="";
+    $("incomeComment").value="";
+    showPaymentInfo();
+    renderAll();
+    alert(`Оплата ${money(amount)} сохранена.\nУченик: ${student.name}\nПредмет: ${subject.name}`);
+}
+
+function deleteIncome(id){
+    const income=DB.incomes.find(x=>String(x.id)===String(id));
+    if(!income)return;
+    if(!confirm("Удалить эту оплату?"))return;
+    const student=DB.students.find(s=>String(s.id)===String(income.studentId));
+    if(student){
+        const subject=(student.subjects||[]).find(x=>String(x.id)===String(income.subjectId));
+        if(subject) subject.paid=Math.max(Number(subject.paid||0)-Number(income.amount||0),0);
+    }
+    DB.incomes=DB.incomes.filter(x=>String(x.id)!==String(id));
+    save(); renderAll();
+}
+
+function addExpense(){
+    const amount=Number($("expenseAmount").value||0);
+    if(amount<=0){alert("Введите сумму");return;}
+    DB.expenses.push({
+        id:Date.now(),
+        date:$("expenseDate").value||today(),
+        category:$("expenseCategory").value,
+        amount,
+        comment:$("expenseComment").value||""
+    });
+    save();
+    $("expenseAmount").value="";
+    $("expenseComment").value="";
+    renderAll();
+}
+
+function deleteExpense(id){
+    if(!confirm("Удалить расход?"))return;
+    DB.expenses=DB.expenses.filter(x=>String(x.id)!==String(id));
+    save(); renderAll();
+}
+
+function financeInRange(date,from,to){ if(from&&date<from)return false; if(to&&date>to)return false; return true; }
+
+function syncFinanceTypeFilters(){
+    const type=$("financeOperationType").value;
+    $("financeIncomeTypeWrap").style.display=(type==="expense")?"none":"block";
+    $("financeExpenseTypeWrap").style.display=(type==="income")?"none":"block";
+    $("financeIncomeBlock").style.display=(type==="expense")?"none":"block";
+    $("financeExpenseBlock").style.display=(type==="income")?"none":"block";
+    renderFinance();
+}
+
+function resetFinanceFilters(){
+    $("financeFrom").value="";
+    $("financeTo").value="";
+    $("financeOperationType").value="all";
+    $("financeIncomeType").value="all";
+    $("financeExpenseType").value="all";
+    syncFinanceTypeFilters();
+}
+
+/* ======================================================
+UNIFIED FINANCE LEDGER
+Источник Финансов: обучение, трансфер, зарплата, прочие расходы.
+Главная использует тот же ledger, что и раздел Финансы.
+====================================================== */
+function getFinanceLedger(from="",to=""){
+    reconcileStudentEducationIncomeLedger();
+    const incomes=[];
+    const expenses=[];
+
+    DB.incomes.forEach(x=>{
+        const date=x.date||today();
+        if(!financeInRange(date,from,to))return;
+        const amount=Number(x.amount||0);
+        if(amount<=0)return;
+        incomes.push({id:x.id,source:"education",date,month:x.month||monthOf(date),student:x.studentName||"—",subject:x.subjectName||"—",amount,comment:x.comment||"—"});
+    });
+
+    DB.salaryPayments.forEach(x=>{
+        const amount=Number(x.amount||0);
+        const date=x.date||today();
+        if(amount<=0||!financeInRange(date,from,to))return;
+        expenses.push({id:x.id,source:"salary",date,month:x.month||monthOf(date),name:"👤 "+(x.employeeName||"—"),type:"Зарплата",category:"Зарплата",amount,comment:x.comment||"—"});
+    });
+
+    DB.expenses.forEach(x=>{
+        const amount=Number(x.amount||0);
+        const date=x.date||today();
+        if(amount<=0||!financeInRange(date,from,to))return;
+        expenses.push({id:x.id,source:"expense",date,month:monthOf(date),name:"—",type:x.category||"Прочее",category:x.category||"Прочее",amount,comment:x.comment||"—"});
+    });
+
+    return {incomes,expenses};
+}
+
+function financeTotals(from="",to=""){
+    const ledger=getFinanceLedger(from,to);
+    return {ledger,income:ledger.incomes.reduce((a,x)=>a+x.amount,0),expense:ledger.expenses.reduce((a,x)=>a+x.amount,0)};
+}
+
+function renderFinance(){
+    const from=$("financeFrom")?.value||"";
+    const to=$("financeTo")?.value||"";
+    const operationType=$("financeOperationType")?.value||"all";
+    const incomeType=$("financeIncomeType")?.value||"all";
+    const expenseType=$("financeExpenseType")?.value||"all";
+    const ledger=getFinanceLedger(from,to);
+    let incomes=ledger.incomes;
+    let expenses=ledger.expenses;
+
+    if(operationType==="income") expenses=[];
+    if(operationType==="expense") incomes=[];
+
+    if(incomeType!=="all") incomes=incomes.filter(x=>x.source===incomeType);
+    if(expenseType!=="all") expenses=expenses.filter(x=>x.category===expenseType);
+
+    incomes.sort((a,b)=>b.date.localeCompare(a.date));
+    expenses.sort((a,b)=>b.date.localeCompare(a.date));
+
+    $("financeIncomeTable").innerHTML=incomes.map(x=>{
+        const action=x.source==="education"?`<button class="danger" onclick="deleteIncome(${x.id})">🗑</button>`:"";
+        return `<tr><td>${x.date}</td><td>${x.student}</td><td>${x.subject}</td><td>${monthName(x.month)}</td><td>${"📚 Обучение"}</td><td class="paid">+${money(x.amount)}</td><td>${x.comment}</td><td>${action}</td></tr>`;
+    }).join("")||`<tr><td colspan="8">Нет доходов за выбранный период</td></tr>`;
+
+    $("financeExpenseTable").innerHTML=expenses.map(x=>{
+        const action=x.source==="salary"?`<button class="danger" onclick="deleteSalaryPayment(${x.id})">🗑</button>`:`<button class="danger" onclick="deleteExpense(${x.id})">🗑</button>`;
+        return `<tr><td>${x.date}</td><td>${x.name}</td><td>${x.category}</td><td>${monthName(x.month)}</td><td class="debt">−${money(x.amount)}</td><td>${x.comment}</td><td>${action}</td></tr>`;
+    }).join("")||`<tr><td colspan="7">Нет расходов за выбранный период</td></tr>`;
+
+    const totalIncome=incomes.reduce((a,x)=>a+x.amount,0);
+    const totalExpense=expenses.reduce((a,x)=>a+x.amount,0);
+    $("financeIncomeSummary").innerHTML=`Всего доходов: <b>${money(totalIncome)}</b> · Операций: <b>${incomes.length}</b>`;
+    $("financeExpenseSummary").innerHTML=`Всего расходов: <b>${money(totalExpense)}</b> · Операций: <b>${expenses.length}</b>`;
+
+    renderFinanceTeachers();
+}
+
+function renderFinanceTeachers(){
+    const select=$("financeTeacher");
+    const current=select.value;
+    select.innerHTML=`<option value="">Выберите учителя</option>`+DB.teachers.map(t=>`<option value="${t.id}">${t.name}${t.subject?" — "+t.subject:""}</option>`).join("");
+    if(current && DB.teachers.some(t=>String(t.id)===String(current))) select.value=current;
+    loadFinanceTeacherGroups();
+}
+
+function loadFinanceTeacherGroups(){
+    const teacherId=$("financeTeacher").value;
+    const groupSelect=$("financeTeacherGroup");
+    const old=groupSelect.value;
+    groupSelect.innerHTML=`<option value="">${teacherId?"Выберите группу":"Сначала выберите учителя"}</option>`;
+    if(!teacherId){$("financeTeacherStudentsTable").innerHTML="";$("financeTeacherSummary").textContent="Выберите учителя, группу и месяц.";return;}
+    const groups=[...new Set(DB.students.flatMap(s=>{
+        const currentGroup=s.group||"Без группы";
+        const subjectMatches=(s.subjects||[]).some(sub=>String(sub.teacherId)===String(teacherId));
+        const historicalGroups=Object.values(s.history||{}).filter(h=>Array.isArray(h.subjects)&&h.subjects.some(sub=>String(sub.teacherId)===String(teacherId))).map(h=>h.group||"Без группы");
+        return subjectMatches?[currentGroup,...historicalGroups]:historicalGroups;
+    }))].sort((a,b)=>a.localeCompare(b,"ru",{numeric:true}));
+    groups.forEach(g=>{const o=document.createElement("option");o.value=g;o.textContent=g;groupSelect.appendChild(o);});
+    if(old&&groups.includes(old))groupSelect.value=old;
+    renderFinanceTeacherGroup();
+}
+
+function getStudentSubjectForTeacherMonth(student,teacherId,month){
+    let candidates=[];
+    const hist=student.history&&student.history[month]&&Array.isArray(student.history[month].subjects)?student.history[month].subjects:null;
+    if(hist)candidates=hist;
+    else candidates=student.subjects||[];
+    return candidates.filter(sub=>String(sub.teacherId)===String(teacherId));
+}
+
+function renderFinanceTeacherGroup(){
+    const teacherId=$("financeTeacher").value;
+    const group=$("financeTeacherGroup").value;
+    const month=$("financeTeacherMonth").value||currentMonth();
+    if(!teacherId||!group){
+        $("financeTeacherStudentsTable").innerHTML="";
+        $("financeTeacherSummary").textContent="Выберите учителя, группу и месяц.";
+        return;
+    }
+    const rows=[];
+    DB.students.forEach(student=>{
+        const history=student.history&&student.history[month];
+        const studentGroup=history?.group ?? student.group ?? "Без группы";
+        if(studentGroup!==group)return;
+        const subjects=getStudentSubjectForTeacherMonth(student,teacherId,month);
+        const monthStatus=history?.status ?? student.status;
+        subjects.forEach(sub=>{
+            const paid=DB.incomes
+                .filter(x=>{
+                    const sameStudent=String(x.studentId)===String(student.id);
+                    const sameMonth=x.month===month || monthOf(x.date)===month;
+                    const sameSubject=String(x.subjectId)===String(sub.id) || String(x.subjectName||"").trim()===String(sub.name||"").trim();
+                    return sameStudent&&sameMonth&&sameSubject;
+                })
+                .reduce((a,x)=>a+Number(x.amount||0),0);
+            const tariff=Number(sub.price||0);
+            rows.push({student,sub,paid,tariff,status:monthStatus,debt:Math.max(tariff-paid,0)});
+        });
+    });
+    $("financeTeacherStudentsTable").innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${r.student.name}</b></td><td>${r.sub.name||"—"}</td><td>${money(r.tariff)}</td><td class="${r.paid>0?"paid":""}">${money(r.paid)}</td><td class="${r.debt>0?"debt":"paid"}">${money(r.debt)}</td><td class="${r.status==="active"?"paid":"debt"}">${r.status==="active"?"🟢 Активный":"🔴 Неактивный"}</td></tr>`).join("")||`<tr><td colspan="7">В выбранной группе нет учеников за этот месяц.</td></tr>`;
+    const totalTariff=rows.reduce((a,r)=>a+r.tariff,0);
+    const totalPaid=rows.reduce((a,r)=>a+r.paid,0);
+    const totalDebt=rows.reduce((a,r)=>a+r.debt,0);
+    $("financeTeacherSummary").innerHTML=`<b>${rows.length}</b> записей · Начислено: <b>${money(totalTariff)}</b> · Оплачено: <b>${money(totalPaid)}</b> · Долг: <b>${money(totalDebt)}</b>`;
+}
+
+
+/* ======================================================
+DASHBOARD
+====================================================== */
+
+let financeChart=null;
+let studentsChart=null;
+
+
+function studentIsActive(s,month){
+
+    if(s.history&&s.history[month]){
+        return s.history[month].status==="active";
+    }
+
+    return s.status==="active";
+}
+
+
+function makeReport(){
+    const from=$("reportFrom").value;
+    const to=$("reportTo").value;
+    if(!from||!to)return;
+
+    const months=monthsBetween(from,to);
+    const ledger=financeTotals(from,to).ledger;
+
+    /* ЕДИНЫЙ ИСТОЧНИК ДЛЯ ГЛАВНОЙ: РАЗДЕЛ ФИНАНСЫ */
+    const eduIncome=ledger.incomes
+        .filter(x=>x.source==="education")
+        .reduce((a,x)=>a+x.amount,0);
+
+    const salaryPaid=ledger.expenses
+        .filter(x=>x.source==="salary")
+        .reduce((a,x)=>a+x.amount,0);
+
+    let salaryDebt=0;
+    DB.salaries.filter(x=>months.includes(x.month)).forEach(s=>{
+        salaryDebt+=salaryStat(s).debt;
+    });
+
+    const totalIncome=ledger.incomes.reduce((a,x)=>a+x.amount,0);
+    const totalExpense=ledger.expenses.reduce((a,x)=>a+x.amount,0);
+    const totalProfit=totalIncome-totalExpense;
+
+    const educationExpense=ledger.expenses.reduce((a,x)=>a+x.amount,0);
+
+    const educationProfit=eduIncome-educationExpense;
+
+    const lastMonth=months[months.length-1];
+    const active=DB.students.filter(s=>studentIsActive(s,lastMonth)).length;
+    const studentDebt=DB.students.reduce((a,s)=>a+studentFinancials(s).debt,0);
+    const leavers=DB.leavers.filter(x=>x.date>=from&&x.date<=to).length;
+
+    $("totalIncome").textContent=money(totalIncome);
+    $("totalExpense").textContent=money(totalExpense);
+    $("totalProfit").textContent=money(totalProfit);
+    $("activeStudents").textContent=active;
+    $("studentDebt").textContent=money(studentDebt);
+    $("salaryDebt").textContent=money(salaryDebt);
+    $("leaversCount").textContent=leavers;
+
+    $("eduIncome").textContent=money(eduIncome);
+    $("eduExpense").textContent=money(educationExpense);
+    $("eduSalary").textContent=money(salaryPaid);
+    $("eduProfit").textContent=money(educationProfit);
+
+    renderMonthly(months);
+    drawCharts(months);
+}
+
+function renderMonthly(months){
+    let html="";
+    months.forEach(month=>{
+        const from=month+"-01";
+        const next=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),1);
+        const to=new Date(next.getTime()-86400000).toISOString().slice(0,10);
+        const ledger=financeTotals(from,to).ledger;
+        const income=ledger.incomes.reduce((a,x)=>a+x.amount,0);
+        const expense=ledger.expenses.reduce((a,x)=>a+x.amount,0);
+        const newcomers=DB.students.filter(s=>monthOf(s.start)===month).length;
+        const leavers=DB.leavers.filter(x=>monthOf(x.date)===month).length;
+        const active=DB.students.filter(s=>studentIsActive(s,month)).length;
+        html+=`<tr><td>${monthName(month)}</td><td>${money(income)}</td><td>${money(expense)}</td><td>${money(income-expense)}</td><td>${newcomers}</td><td>${leavers}</td><td>${active}</td></tr>`;
+    });
+    $("monthlyReport").innerHTML=html;
+}
+
+function drawCharts(months){
+    const income=[];
+    const expense=[];
+    const profit=[];
+    const active=[];
+
+    months.forEach(month=>{
+        const from=month+"-01";
+        const next=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),1);
+        const to=new Date(next.getTime()-86400000).toISOString().slice(0,10);
+        const totals=financeTotals(from,to);
+        income.push(totals.income);
+        expense.push(totals.expense);
+        profit.push(totals.income-totals.expense);
+        active.push(DB.students.filter(s=>studentIsActive(s,month)).length);
+    });
+
+    if(financeChart)
+        financeChart.destroy();
+
+    financeChart=new Chart(
+        $("financeChart"),
+        {
+            type:"bar",
+
+            data:{
+                labels:months.map(monthName),
+
+                datasets:[
+                    {
+                        label:"Доход",
+                        data:income
+                    },
+                    {
+                        label:"Расход",
+                        data:expense
+                    },
+                    {
+                        label:"Прибыль",
+                        data:profit
+                    }
+                ]
+            },
+
+            options:{
+                responsive:true,
+                maintainAspectRatio:false
+            }
+        }
+    );
+
+
+    if(studentsChart)
+        studentsChart.destroy();
+
+    studentsChart=new Chart(
+        $("studentsChart"),
+        {
+            type:"line",
+
+            data:{
+                labels:months.map(monthName),
+
+                datasets:[
+                    {
+                        label:"Активные ученики",
+                        data:active
+                    }
+                ]
+            },
+
+            options:{
+                responsive:true,
+                maintainAspectRatio:false
+            }
+        }
+    );
+
+}
+
+
+/* ======================================================
+RENDER ALL
+====================================================== */
+
+function renderAll(){
+
+    reconcileStudentEducationIncomeLedger();
+
+    renderStudents();
+    renderTeachers();
+    renderStaff();
+    renderSalary();
+    renderTransfer();
+    renderLeaverLists();
+    renderLeavers();
+    renderIncomeStudents();
+    renderFinance();
+
+    if($("reportFrom").value&&$("reportTo").value){
+        makeReport();
+    }
+
+}
+
+
+/* ======================================================
+START
+====================================================== */
+
+$("reportFrom").value=
+    new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        1
+    ).toISOString().slice(0,10);
+
+$("reportTo").value=today();
+
+$("studentStart").value=today();
+$("leaverDate").value=today();
+$("incomeDate").value=today();
+$("incomeMonth").value=currentMonth();
+$("expenseDate").value=today();
+$("salaryDate").value=today();
+$("salaryMonth").value=currentMonth();
+$("transferMonth").value=currentMonth();
+$("transferPaymentDate").value=today();
+$("financeTeacherMonth").value=currentMonth();
+syncFinanceTypeFilters();
+
+function syncExistingStudentPaymentsToFinance(){
+
+    const flag="DIALOG_STUDENT_FINANCE_SYNC_V1";
+
+    if(localStorage.getItem(flag)==="1")return;
+
+    let changed=false;
+
+    DB.students.forEach(student=>{
+
+        (student.subjects||[]).forEach(subject=>{
+
+            const paid=Number(subject.paid||0);
+
+            if(paid<=0)return;
+
+            /*
+            Для старых данных сравниваем по ученику + названию предмета,
+            чтобы не зависеть от старых ID предметов.
+            */
+            const alreadyInFinance=DB.incomes
+                .filter(x=>
+                    String(x.studentId)===String(student.id) &&
+                    String(x.subjectName||"").trim().toLowerCase()===
+                    String(subject.name||"").trim().toLowerCase()
+                )
+                .reduce(
+                    (a,x)=>a+Number(x.amount||0),0
+                );
+
+            const difference=paid-alreadyInFinance;
+
+            if(difference>0){
+
+                DB.incomes.push({
+                    id:Date.now()+Math.random(),
+                    date:today(),
+                    studentId:String(student.id),
+                    studentName:student.name,
+                    subjectId:String(subject.id),
+                    subjectName:subject.name,
+                    month:currentMonth(),
+                    amount:difference,
+                    comment:"Автоматическая синхронизация оплаты из карточки ученика",
+                    source:"student_card_migration"
+                });
+
+                changed=true;
+            }
+
+        });
+
+    });
+
+    localStorage.setItem(flag,"1");
+
+    if(changed)save();
+}
+
+
+async function initApp(){
+    try{
+        await initAuth();
+    }catch(error){
+        console.error("Auth init error:",error);
+        setAuthMessage("Не удалось запустить авторизацию: "+(error.message||error));
+        showAuthLogin();
+    }
+}
+
+initApp();
+
+</script>
+</div></body>
+</html>
