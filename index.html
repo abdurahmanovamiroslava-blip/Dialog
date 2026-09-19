@@ -1002,15 +1002,22 @@ let accessPollTimer=null;
 
 // Supabase Auth технически использует email как идентификатор.
 // Пользователь его не вводит: из логина создаётся внутренний технический адрес.
-const AUTH_DOMAIN='dialog.local';
+// Supabase Client requires a syntactically valid email for signUp().
+// Users still enter only a username; the email below is an internal identifier.
+const AUTH_DOMAIN='dialog.example.com';
+const LEGACY_AUTH_DOMAIN='dialog.local';
 function normalizeUsername(value){
     return String(value||'').trim().toLowerCase();
 }
 function validUsername(value){
     return /^[a-z0-9][a-z0-9._-]{2,31}$/.test(value);
 }
-function authEmailFromUsername(username){
-    return `${normalizeUsername(username)}@${AUTH_DOMAIN}`;
+function authEmailFromUsername(username,domain=AUTH_DOMAIN){
+    return `${normalizeUsername(username)}@${domain}`;
+}
+function authEmailCandidates(username){
+    const u=normalizeUsername(username);
+    return [authEmailFromUsername(u,AUTH_DOMAIN),authEmailFromUsername(u,LEGACY_AUTH_DOMAIN)];
 }
 
 const DB_ARRAY_KEYS=[
@@ -1274,15 +1281,24 @@ async function loginUser(){
     }
 
     setAuthMessage("Выполняется вход...","success");
-    const email=authEmailFromUsername(username);
-    const {error}=await sb.auth.signInWithPassword({email,password});
-    if(error){
-        console.error("Диалог login error:", error);
-        const msg=String(error.message||"Неизвестная ошибка");
+    const candidates=authEmailCandidates(username);
+    let lastError=null;
+    let signedIn=false;
+    for(const email of candidates){
+        const result=await sb.auth.signInWithPassword({email,password});
+        if(!result.error){
+            signedIn=true;
+            break;
+        }
+        lastError=result.error;
+    }
+    if(!signedIn){
+        console.error("Диалог login error:", lastError);
+        const msg=String(lastError?.message||"Неизвестная ошибка");
         if(/email not confirmed/i.test(msg)){
-            setAuthMessage("Email аккаунта не подтверждён в Supabase. Открой Authentication → Users → mira и подтверди пользователя.");
+            setAuthMessage("Email технического аккаунта не подтверждён в Supabase.");
         }else if(/invalid login credentials/i.test(msg)){
-            setAuthMessage("Supabase не принял логин/пароль. Проверь, что аккаунт mira создан с email " + email + " и введён правильный пароль.");
+            setAuthMessage("Неверный логин или пароль.");
         }else{
             setAuthMessage("Ошибка входа Supabase: " + msg);
         }
@@ -1322,7 +1338,12 @@ async function registerManager(){
     });
 
     if(error){
-        setAuthMessage(error.message||"Не удалось зарегистрировать менеджера.");
+        const msg=String(error.message||"Не удалось зарегистрировать менеджера.");
+        if(/invalid.*email|email.*invalid/i.test(msg)){
+            setAuthMessage("Не удалось создать технический аккаунт. Повторите регистрацию или сообщите администратору.");
+        }else{
+            setAuthMessage(msg);
+        }
         return;
     }
 
