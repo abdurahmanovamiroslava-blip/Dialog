@@ -1318,7 +1318,7 @@ async function registerManager(){
         return;
     }
     if(!validUsername(username)){
-        setAuthMessage("Логин: 3–32 символа, только латинские буквы, цифры, точка, тире или _. ");
+        setAuthMessage("Логин: 3–32 символа, только латинские буквы, цифры, точка, тире или _.");
         return;
     }
     if(password!==password2){
@@ -1330,44 +1330,35 @@ async function registerManager(){
         return;
     }
 
-    setAuthMessage("Регистрируем менеджера...","success");
-    const {data,error}=await sb.auth.signUp({
-        email:authEmailFromUsername(username),
-        password,
-        options:{data:{full_name:name,role:"manager",username}}
-    });
+    setAuthMessage("Создаём заявку менеджера...","success");
 
-    if(error){
-        const msg=String(error.message||"Не удалось зарегистрировать менеджера.");
-        if(/invalid.*email|email.*invalid/i.test(msg)){
-            setAuthMessage("Не удалось создать технический аккаунт. Повторите регистрацию или сообщите администратору.");
-        }else{
-            setAuthMessage(msg);
+    try{
+        const {data,error}=await sb.functions.invoke("dialog-manager-register",{
+            body:{username,full_name:name,password}
+        });
+
+        if(error){
+            let msg=error.message||"Не удалось зарегистрировать менеджера.";
+            if(error.context && typeof error.context.json === "function"){
+                try{
+                    const body=await error.context.json();
+                    msg=body?.error||body?.message||msg;
+                }catch(_e){}
+            }
+            throw new Error(msg);
         }
-        return;
-    }
 
-    if(!data?.user || !data?.session){
-        setAuthMessage("Регистрация создана. В Supabase должен быть отключён Confirm email, чтобы менеджер сразу получил сессию.");
+        if(data?.ok===false){
+            throw new Error(data.error||"Не удалось зарегистрировать менеджера.");
+        }
+
+        setAuthMessage("Регистрация выполнена. Теперь дождитесь разрешения администратора.","success");
+        $("registerForm").reset();
         switchAuthMode("login");
-        return;
+    }catch(error){
+        console.error("Manager registration error:",error);
+        setAuthMessage(error.message||"Не удалось зарегистрировать менеджера.");
     }
-
-    const {error:profileError}=await sb.rpc("dialog_register_manager",{
-        p_user_id:data.user.id,
-        p_username:username,
-        p_full_name:name
-    });
-
-    if(profileError){
-        console.error("Dialog profile create error:",profileError);
-        setAuthMessage("Аккаунт создан, но профиль менеджера не создан: " + (profileError.message||profileError));
-        await sb.auth.signOut();
-        return;
-    }
-
-    setAuthMessage("Регистрация выполнена. Теперь дождитесь разрешения администратора.","success");
-    showPendingAccess();
 }
 
 async function logoutUser(){
